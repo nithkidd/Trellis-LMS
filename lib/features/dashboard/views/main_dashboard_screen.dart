@@ -23,23 +23,23 @@ class _MainDashboardScreenState extends State<MainDashboardScreen> {
   ];
 
   final List<String> _titles = const [
-    'Home',
-    'My Schools',
-    'Statistics',
-    'Settings',
+    'ទំព័រដើម',
+    'សាលារបស់ខ្ញុំ',
+    'ស្ថិតិ',
+    'ការកំណត់',
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_titles[_currentIndex], style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          _titles[_currentIndex],
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         elevation: 1,
       ),
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _tabs,
-      ),
+      body: IndexedStack(index: _currentIndex, children: _tabs),
       bottomNavigationBar: DashboardBottomNavBar(
         currentIndex: _currentIndex,
         onTap: (index) {

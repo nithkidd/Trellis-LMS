@@ -16,7 +16,8 @@ class ClassDashboardScreen extends ConsumerStatefulWidget {
   }) : super(key: key);
 
   @override
-  ConsumerState<ClassDashboardScreen> createState() => _ClassDashboardScreenState();
+  ConsumerState<ClassDashboardScreen> createState() =>
+      _ClassDashboardScreenState();
 }
 
 class _ClassDashboardScreenState extends ConsumerState<ClassDashboardScreen> {
@@ -24,13 +25,17 @@ class _ClassDashboardScreenState extends ConsumerState<ClassDashboardScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(classNotifierProvider.notifier).loadClassesForSchool(widget.schoolId);
+      ref
+          .read(classNotifierProvider.notifier)
+          .loadClassesForSchool(widget.schoolId);
     });
   }
 
   void _showAddClassDialog(BuildContext context) {
     AddClassDialog.show(context, (name, year) {
-      ref.read(classNotifierProvider.notifier).addClass(widget.schoolId, name, year);
+      ref
+          .read(classNotifierProvider.notifier)
+          .addClass(widget.schoolId, name, year);
     });
   }
 
@@ -39,15 +44,13 @@ class _ClassDashboardScreenState extends ConsumerState<ClassDashboardScreen> {
     final classesState = ref.watch(classNotifierProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('${widget.schoolName} Classes'),
-      ),
+      appBar: AppBar(title: Text('ថ្នាក់របស់ ${widget.schoolName}')),
       body: classesState.when(
         data: (classes) {
           if (classes.isEmpty) {
             return const Center(
               child: Text(
-                'No classes added to this school yet.\nTap + to create one.',
+                'មិនទាន់មានថ្នាក់ក្នុងសាលានេះ។\nចុច + ដើម្បីបង្កើត។',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 16, color: Colors.grey, height: 1.5),
               ),
@@ -63,7 +66,9 @@ class _ClassDashboardScreenState extends ConsumerState<ClassDashboardScreen> {
                 model: model,
                 onDelete: () {
                   if (model.id != null) {
-                    ref.read(classNotifierProvider.notifier).deleteClass(model.id!);
+                    ref
+                        .read(classNotifierProvider.notifier)
+                        .deleteClass(model.id!);
                   }
                 },
                 onTap: () {
@@ -85,13 +90,16 @@ class _ClassDashboardScreenState extends ConsumerState<ClassDashboardScreen> {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
-          child: Text('Error loading classes: $error', style: const TextStyle(color: Colors.red)),
+          child: Text(
+            'កំហុសពេលផ្ទុកថ្នាក់៖ $error',
+            style: const TextStyle(color: Colors.red),
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddClassDialog(context),
+        tooltip: 'បន្ថែមថ្នាក់',
         child: const Icon(Icons.add),
-        tooltip: 'Add Class',
       ),
     );
   }

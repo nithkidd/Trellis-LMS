@@ -39,6 +39,11 @@ dependencies:
   flutter_riverpod: ^3.2.1
   sqflite_common_ffi: ^2.4.0+2
   sqflite_common_ffi_web: ^0.4.5+4
+  excel: ^4.0.6
+  file_picker: ^10.3.10
+  file_saver: ^0.3.1
+  intl: ^0.19.0
+  shared_preferences: ^2.2.2
 
 dev_dependencies:
   flutter_test:
@@ -77,8 +82,35 @@ flutter:
   # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:
-  # fonts:
-  #   - family: Schyler
+  fonts:
+    - family: Kantumruy Pro
+      fonts:
+        - asset: lib/core/font/KantumruyPro-Thin.ttf
+          weight: 100
+        - asset: lib/core/font/KantumruyPro-ExtraLight.ttf
+          weight: 200
+        - asset: lib/core/font/KantumruyPro-Light.ttf
+          weight: 300
+        - asset: lib/core/font/KantumruyPro-Regular.ttf
+          weight: 400
+        - asset: lib/core/font/KantumruyPro-Italic.ttf
+          weight: 400
+          style: italic
+        - asset: lib/core/font/KantumruyPro-Medium.ttf
+          weight: 500
+        - asset: lib/core/font/KantumruyPro-MediumItalic.ttf
+          weight: 500
+          style: italic
+        - asset: lib/core/font/KantumruyPro-SemiBold.ttf
+          weight: 600
+        - asset: lib/core/font/KantumruyPro-SemiBoldItalic.ttf
+          weight: 600
+          style: italic
+        - asset: lib/core/font/KantumruyPro-Bold.ttf
+          weight: 700
+        - asset: lib/core/font/KantumruyPro-BoldItalic.ttf
+          weight: 700
+          style: italic
   #     fonts:
   #       - asset: fonts/Schyler-Regular.ttf
   #       - asset: fonts/Schyler-Italic.ttf

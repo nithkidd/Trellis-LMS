@@ -6,6 +6,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'package:lms/features/dashboard/views/main_dashboard_screen.dart';
 import 'package:lms/core/theme/app_theme.dart';
+import 'package:lms/core/theme/theme_provider.dart';
 import 'package:lms/core/database/database_helper.dart';
 
 void main() async {
@@ -27,15 +28,17 @@ void main() async {
   runApp(const ProviderScope(child: MyApp()));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeColor = ref.watch(themeNotifierProvider);
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Teacher LMS',
-      theme: AppTheme.themeData,
+      title: 'ប្រព័ន្ធគ្រប់គ្រងការសិក្សា',
+      theme: AppTheme.getTheme(themeColor),
       home: const MainDashboardScreen(),
     );
   }

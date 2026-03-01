@@ -22,37 +22,39 @@ class ClassListTile extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Edit Class'),
+        title: const Text('កែប្រែថ្នាក់'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: nameCtrl,
-              decoration: const InputDecoration(labelText: 'Class name'),
+              decoration: const InputDecoration(labelText: 'ឈ្មោះថ្នាក់'),
               autofocus: true,
             ),
             const SizedBox(height: 12),
             TextField(
               controller: yearCtrl,
-              decoration: const InputDecoration(labelText: 'Academic year'),
+              decoration: const InputDecoration(labelText: 'ឆ្នាំសិក្សា'),
             ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: const Text('បោះបង់'),
           ),
           FilledButton(
             onPressed: () {
               final name = nameCtrl.text.trim();
               final year = yearCtrl.text.trim();
               if (name.isNotEmpty && year.isNotEmpty && model.id != null) {
-                ref.read(classNotifierProvider.notifier).updateClass(model.id!, name, year);
+                ref
+                    .read(classNotifierProvider.notifier)
+                    .updateClass(model.id!, name, year);
                 Navigator.pop(ctx);
               }
             },
-            child: const Text('Save'),
+            child: const Text('រក្សាទុក'),
           ),
         ],
       ),
@@ -63,12 +65,14 @@ class ClassListTile extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Remove Class?'),
-        content: Text('Remove "${model.name}"? All students and grades in this class will be deleted.'),
+        title: const Text('លុបថ្នាក់ចេញ?'),
+        content: Text(
+          'លុប "${model.name}" មែនទេ? សិស្ស និងពិន្ទុទាំងអស់ក្នុងថ្នាក់នេះនឹងត្រូវលុប។',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: const Text('បោះបង់'),
           ),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: AppColors.danger),
@@ -76,7 +80,7 @@ class ClassListTile extends ConsumerWidget {
               onDelete();
               Navigator.pop(ctx);
             },
-            child: const Text('Remove'),
+            child: const Text('លុប'),
           ),
         ],
       ),
@@ -100,10 +104,15 @@ class ClassListTile extends ConsumerWidget {
             child: Icon(Icons.class_, color: AppColors.primary),
           ),
           title: Text(model.name, style: AppTextStyles.subheading),
-          subtitle: Text('Academic Year: ${model.academicYear}', style: AppTextStyles.caption),
+          subtitle: Text(
+            'ឆ្នាំសិក្សា៖ ${model.academicYear}',
+            style: AppTextStyles.caption,
+          ),
           trailing: PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSizes.radiusMd)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+            ),
             onSelected: (value) {
               if (value == 'edit') _showEditDialog(context, ref);
               if (value == 'remove') _showDeleteDialog(context);
@@ -111,19 +120,31 @@ class ClassListTile extends ConsumerWidget {
             itemBuilder: (context) => [
               const PopupMenuItem<String>(
                 value: 'edit',
-                child: Row(children: [
-                  Icon(Icons.edit_outlined, color: AppColors.primary, size: AppSizes.iconMd),
-                  SizedBox(width: 8),
-                  Text('Edit'),
-                ]),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.edit_outlined,
+                      color: AppColors.primary,
+                      size: AppSizes.iconMd,
+                    ),
+                    SizedBox(width: 8),
+                    Text('កែប្រែ'),
+                  ],
+                ),
               ),
               const PopupMenuItem<String>(
                 value: 'remove',
-                child: Row(children: [
-                  Icon(Icons.delete_outline, color: AppColors.danger, size: AppSizes.iconMd),
-                  SizedBox(width: 8),
-                  Text('Remove', style: TextStyle(color: AppColors.danger)),
-                ]),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.delete_outline,
+                      color: AppColors.danger,
+                      size: AppSizes.iconMd,
+                    ),
+                    SizedBox(width: 8),
+                    Text('លុប', style: TextStyle(color: AppColors.danger)),
+                  ],
+                ),
               ),
             ],
           ),

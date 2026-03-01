@@ -4,7 +4,7 @@ import 'package:path/path.dart';
 
 class DatabaseHelper {
   static const _databaseName = "TeacherLMS.db";
-  static const _databaseVersion = 6;
+  static const _databaseVersion = 7;
 
   // Table Names
   static const tableSchools = 'schools';
@@ -58,6 +58,13 @@ class DatabaseHelper {
       await db.execute('DROP TABLE IF EXISTS $tableClasses');
       await db.execute('DROP TABLE IF EXISTS $tableSchools');
       await _createTables(db);
+    } else if (oldVersion < 7) {
+      // Add new columns to students table
+      await db.execute('ALTER TABLE $tableStudents ADD COLUMN sex TEXT');
+      await db.execute(
+        'ALTER TABLE $tableStudents ADD COLUMN date_of_birth TEXT',
+      );
+      await db.execute('ALTER TABLE $tableStudents ADD COLUMN address TEXT');
     }
   }
 
@@ -99,6 +106,9 @@ class DatabaseHelper {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         class_id INTEGER NOT NULL,
         name TEXT NOT NULL,
+        sex TEXT,
+        date_of_birth TEXT,
+        address TEXT,
         remarks TEXT,
         FOREIGN KEY (class_id) REFERENCES $tableClasses (id) ON DELETE CASCADE
       )

@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import '../../../core/database/database_helper.dart';
+import '../../../core/utils/khmer_collator.dart';
 import '../models/subject_model.dart';
 
 class SubjectRepository {
@@ -16,9 +17,15 @@ class SubjectRepository {
       DatabaseHelper.tableSubjects,
       where: 'class_id = ?',
       whereArgs: [classId],
-      orderBy: 'name ASC',
     );
-    return maps.map((map) => SubjectModel.fromMap(map)).toList();
+    List<SubjectModel> subjects = maps
+        .map((map) => SubjectModel.fromMap(map))
+        .toList();
+
+    // Sort by Khmer alphabetical order
+    KhmerCollator.sortBy(subjects, (s) => s.name);
+
+    return subjects;
   }
 
   Future<SubjectModel?> getById(int id) async {

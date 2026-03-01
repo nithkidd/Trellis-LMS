@@ -24,13 +24,27 @@ class StudentNotifier extends AsyncNotifier<List<StudentModel>> {
     });
   }
 
-  Future<void> addStudent(int classId, String name) async {
+  Future<void> addStudent(
+    int classId,
+    String name, {
+    String? sex,
+    String? dateOfBirth,
+    String? address,
+    String? remarks,
+  }) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final repository = ref.read(studentRepositoryProvider);
-      final newStudent = StudentModel(classId: classId, name: name);
+      final newStudent = StudentModel(
+        classId: classId,
+        name: name,
+        sex: sex,
+        dateOfBirth: dateOfBirth,
+        address: address,
+        remarks: remarks,
+      );
       await repository.insert(newStudent);
-      
+
       // Reload students for the current class
       return await repository.getStudentsByClassId(_currentClassId ?? classId);
     });
@@ -38,12 +52,12 @@ class StudentNotifier extends AsyncNotifier<List<StudentModel>> {
 
   Future<void> deleteStudent(int id) async {
     if (_currentClassId == null) return;
-    
+
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final repository = ref.read(studentRepositoryProvider);
       await repository.delete(id);
-      
+
       // Reload students for the current class
       return await repository.getStudentsByClassId(_currentClassId!);
     });
@@ -60,6 +74,7 @@ class StudentNotifier extends AsyncNotifier<List<StudentModel>> {
   }
 }
 
-final studentNotifierProvider = AsyncNotifierProvider<StudentNotifier, List<StudentModel>>(() {
-  return StudentNotifier();
-});
+final studentNotifierProvider =
+    AsyncNotifierProvider<StudentNotifier, List<StudentModel>>(() {
+      return StudentNotifier();
+    });

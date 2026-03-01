@@ -38,14 +38,14 @@ class _SchoolsTabWidgetState extends ConsumerState<SchoolsTabWidget> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Selected Schools?'),
+        title: const Text('លុបសាលាដែលបានជ្រើស?'),
         content: Text(
-          'Delete ${_selectedSchoolIds.length} school(s)? This will also delete all classes, students, and grades within them.',
+          'លុបសាលាចំនួន ${_selectedSchoolIds.length} មែនទេ? វានឹងលុបថ្នាក់ សិស្ស និងពិន្ទុទាំងអស់នៅក្នុងសាលាទាំងនោះផងដែរ។',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: const Text('បោះបង់'),
           ),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: AppColors.danger),
@@ -59,7 +59,7 @@ class _SchoolsTabWidgetState extends ConsumerState<SchoolsTabWidget> {
                 _isEditMode = false;
               });
             },
-            child: const Text('Delete'),
+            child: const Text('លុប'),
           ),
         ],
       ),
@@ -88,16 +88,16 @@ class _SchoolsTabWidgetState extends ConsumerState<SchoolsTabWidget> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Add School'),
+          title: const Text('បន្ថែមសាលា'),
           content: TextField(
             controller: nameController,
-            decoration: const InputDecoration(labelText: 'School name'),
+            decoration: const InputDecoration(labelText: 'ឈ្មោះសាលា'),
             autofocus: true,
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+              child: const Text('បោះបង់'),
             ),
             FilledButton(
               onPressed: () {
@@ -107,11 +107,11 @@ class _SchoolsTabWidgetState extends ConsumerState<SchoolsTabWidget> {
                   Navigator.of(context).pop();
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please enter a school name')),
+                    const SnackBar(content: Text('សូមបញ្ចូលឈ្មោះសាលា')),
                   );
                 }
               },
-              child: const Text('Add'),
+              child: const Text('បន្ថែម'),
             ),
           ],
         );
@@ -136,7 +136,7 @@ class _SchoolsTabWidgetState extends ConsumerState<SchoolsTabWidget> {
                   child: TextField(
                     controller: _searchController,
                     decoration: InputDecoration(
-                      hintText: 'Search schools...',
+                      hintText: 'ស្វែងរកសាលា...',
                       prefixIcon: const Icon(Icons.search),
                       suffixIcon: _searchQuery.isNotEmpty
                           ? IconButton(
@@ -167,17 +167,17 @@ class _SchoolsTabWidgetState extends ConsumerState<SchoolsTabWidget> {
                   icon: Icon(
                     _isEditMode ? Icons.done : Icons.edit_outlined,
                     color: _isEditMode
-                        ? AppColors.primary
+                        ? Theme.of(context).colorScheme.primary
                         : AppColors.textSecondary,
                   ),
                   style: IconButton.styleFrom(
                     backgroundColor: _isEditMode
-                        ? AppColors.primaryLight
+                        ? Theme.of(context).colorScheme.primaryContainer
                         : AppColors.background,
                     padding: const EdgeInsets.all(AppSizes.paddingMd),
                   ),
                   onPressed: _toggleEditMode,
-                  tooltip: _isEditMode ? 'Done' : 'Edit',
+                  tooltip: _isEditMode ? 'រួចរាល់' : 'កែប្រែ',
                 ),
               ],
             ),
@@ -207,7 +207,7 @@ class _SchoolsTabWidgetState extends ConsumerState<SchoolsTabWidget> {
                         size: AppSizes.iconLg,
                       ),
                       label: Text(
-                        'Delete ${_selectedSchoolIds.length} Selected',
+                        'លុបដែលបានជ្រើស ${_selectedSchoolIds.length}',
                         style: AppTextStyles.button,
                       ),
                     )
@@ -226,7 +226,7 @@ class _SchoolsTabWidgetState extends ConsumerState<SchoolsTabWidget> {
                           ? null
                           : () => _showAddSchoolDialog(context),
                       icon: const Icon(Icons.add, size: AppSizes.iconLg),
-                      label: const Text('Add', style: AppTextStyles.button),
+                      label: const Text('បន្ថែម', style: AppTextStyles.button),
                     ),
             ),
           ),
@@ -266,13 +266,13 @@ class _SchoolsTabWidgetState extends ConsumerState<SchoolsTabWidget> {
                           size: 20,
                         ),
                         label: Text(
-                          allSelected ? 'Deselect All' : 'Select All',
+                          allSelected ? 'ដកជម្រើសទាំងអស់' : 'ជ្រើសទាំងអស់',
                         ),
                       ),
                       const Spacer(),
                       if (_selectedSchoolIds.isNotEmpty)
                         Text(
-                          '${_selectedSchoolIds.length} selected',
+                          'បានជ្រើស ${_selectedSchoolIds.length}',
                           style: AppTextStyles.caption,
                         ),
                     ],
@@ -299,8 +299,8 @@ class _SchoolsTabWidgetState extends ConsumerState<SchoolsTabWidget> {
                       padding: const EdgeInsets.all(AppSizes.paddingLg),
                       child: Text(
                         _searchQuery.isEmpty
-                            ? 'No schools added yet.\nTap Add above to create one.'
-                            : 'No schools found matching "$_searchQuery"',
+                            ? 'មិនទាន់មានសាលា។\nចុចបន្ថែមខាងលើដើម្បីបង្កើត។'
+                            : 'រកមិនឃើញសាលាដែលត្រូវនឹង "$_searchQuery"',
                         textAlign: TextAlign.center,
                         style: AppTextStyles.body.copyWith(
                           color: AppColors.textSecondary,
@@ -401,7 +401,7 @@ class _SchoolsTabWidgetState extends ConsumerState<SchoolsTabWidget> {
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (error, stack) => Center(
                 child: Text(
-                  'Error: $error',
+                  'កំហុស៖ $error',
                   style: TextStyle(color: AppColors.danger),
                 ),
               ),

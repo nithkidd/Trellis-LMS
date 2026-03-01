@@ -16,9 +16,13 @@ class GlobalStatisticsTabWidget extends StatelessWidget {
               Icon(Icons.bar_chart, size: 80, color: Colors.grey.shade400),
               const SizedBox(height: 24),
               Text(
-                'Global Statistics coming soon...',
+                'ស្ថិតិសរុបនឹងមកដល់ឆាប់ៗ...',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 18, color: Colors.grey.shade600, height: 1.5),
+                style: TextStyle(
+                  fontSize: 18,
+                  color: Colors.grey.shade600,
+                  height: 1.5,
+                ),
               ),
             ],
           ),

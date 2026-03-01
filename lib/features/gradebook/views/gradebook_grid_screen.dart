@@ -10,13 +10,12 @@ import '../widgets/gradebook_student_row.dart';
 class GradebookGridScreen extends ConsumerStatefulWidget {
   final AssignmentModel assignment;
 
-  const GradebookGridScreen({
-    Key? key,
-    required this.assignment,
-  }) : super(key: key);
+  const GradebookGridScreen({Key? key, required this.assignment})
+    : super(key: key);
 
   @override
-  ConsumerState<GradebookGridScreen> createState() => _GradebookGridScreenState();
+  ConsumerState<GradebookGridScreen> createState() =>
+      _GradebookGridScreenState();
 }
 
 class _GradebookGridScreenState extends ConsumerState<GradebookGridScreen> {
@@ -26,8 +25,12 @@ class _GradebookGridScreenState extends ConsumerState<GradebookGridScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(studentNotifierProvider.notifier).loadStudentsForClass(widget.assignment.classId);
-      ref.read(scoreNotifierProvider.notifier).loadScoresForAssignment(widget.assignment.id!);
+      ref
+          .read(studentNotifierProvider.notifier)
+          .loadStudentsForClass(widget.assignment.classId);
+      ref
+          .read(scoreNotifierProvider.notifier)
+          .loadScoresForAssignment(widget.assignment.id!);
     });
   }
 
@@ -56,7 +59,7 @@ class _GradebookGridScreenState extends ConsumerState<GradebookGridScreen> {
       body: studentsState.when(
         data: (students) {
           if (students.isEmpty) {
-            return const Center(child: Text('No students in this class.'));
+            return const Center(child: Text('មិនមានសិស្សក្នុងថ្នាក់នេះ។'));
           }
 
           // Build a studentId → ScoreModel lookup map
@@ -94,16 +97,16 @@ class _GradebookGridScreenState extends ConsumerState<GradebookGridScreen> {
                 controller: controller,
                 assignment: widget.assignment,
                 onSave: (studentId, assignmentId, points) {
-                  ref.read(scoreNotifierProvider.notifier).saveScoreForAssignment(
-                    studentId, assignmentId, points,
-                  );
+                  ref
+                      .read(scoreNotifierProvider.notifier)
+                      .saveScoreForAssignment(studentId, assignmentId, points);
                 },
               );
             },
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, s) => Center(child: Text('Error loading roster: $e')),
+        error: (e, s) => Center(child: Text('កំហុសពេលផ្ទុកបញ្ជីសិស្ស៖ $e')),
       ),
     );
   }

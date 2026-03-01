@@ -20,16 +20,16 @@ class SchoolListTileWidget extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Edit School'),
+        title: const Text('កែប្រែសាលា'),
         content: TextField(
           controller: controller,
-          decoration: const InputDecoration(labelText: 'School name'),
+          decoration: const InputDecoration(labelText: 'ឈ្មោះសាលា'),
           autofocus: true,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: const Text('បោះបង់'),
           ),
           FilledButton(
             onPressed: () {
@@ -41,7 +41,7 @@ class SchoolListTileWidget extends ConsumerWidget {
                 Navigator.pop(ctx);
               }
             },
-            child: const Text('Save'),
+            child: const Text('រក្សាទុក'),
           ),
         ],
       ),
@@ -52,14 +52,14 @@ class SchoolListTileWidget extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Remove School?'),
+        title: const Text('លុបសាលាចេញ?'),
         content: Text(
-          'Remove "${school.name}"? This will delete all classes, students, and grades within it.',
+          'លុប "${school.name}" មែនទេ? វានឹងលុបថ្នាក់ទាំងអស់ សិស្សទាំងអស់ និងពិន្ទុទាំងអស់នៅក្នុងសាលានេះ។',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: const Text('បោះបង់'),
           ),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: AppColors.danger),
@@ -67,7 +67,7 @@ class SchoolListTileWidget extends ConsumerWidget {
               onDelete();
               Navigator.pop(ctx);
             },
-            child: const Text('Remove'),
+            child: const Text('លុប'),
           ),
         ],
       ),
@@ -95,9 +95,12 @@ class SchoolListTileWidget extends ConsumerWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
           child: ListTile(
-            leading: const CircleAvatar(
-              backgroundColor: AppColors.primaryLight,
-              child: Icon(Icons.account_balance, color: AppColors.primary),
+            leading: CircleAvatar(
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              child: Icon(
+                Icons.account_balance,
+                color: Theme.of(context).colorScheme.primary,
+              ),
             ),
             title: Text(school.name, style: AppTextStyles.subheading),
             trailing: PopupMenuButton<String>(
@@ -110,17 +113,17 @@ class SchoolListTileWidget extends ConsumerWidget {
                 if (value == 'remove') _showDeleteDialog(context);
               },
               itemBuilder: (context) => [
-                const PopupMenuItem<String>(
+                PopupMenuItem<String>(
                   value: 'edit',
                   child: Row(
                     children: [
                       Icon(
                         Icons.edit_outlined,
-                        color: AppColors.primary,
+                        color: Theme.of(context).colorScheme.primary,
                         size: AppSizes.iconMd,
                       ),
                       SizedBox(width: 8),
-                      Text('Edit'),
+                      Text('កែប្រែ'),
                     ],
                   ),
                 ),
@@ -134,7 +137,7 @@ class SchoolListTileWidget extends ConsumerWidget {
                         size: AppSizes.iconMd,
                       ),
                       SizedBox(width: 8),
-                      Text('Remove', style: TextStyle(color: AppColors.danger)),
+                      Text('លុប', style: TextStyle(color: AppColors.danger)),
                     ],
                   ),
                 ),

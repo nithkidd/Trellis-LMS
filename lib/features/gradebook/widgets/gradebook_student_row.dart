@@ -68,12 +68,12 @@ class _GradebookStudentRowState extends State<GradebookStudentRow> {
         children: [
           CircleAvatar(
             radius: 20,
-            backgroundColor: AppColors.primaryLight,
+            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
             child: Text(
               widget.student.name[0].toUpperCase(),
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: AppColors.primary,
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
           ),
@@ -88,14 +88,20 @@ class _GradebookStudentRowState extends State<GradebookStudentRow> {
             duration: const Duration(milliseconds: 200),
             child: const Padding(
               padding: EdgeInsets.only(right: 8),
-              child: Icon(Icons.check_circle, color: AppColors.success, size: 18),
+              child: Icon(
+                Icons.check_circle,
+                color: AppColors.success,
+                size: 18,
+              ),
             ),
           ),
           Expanded(
             flex: 1,
             child: TextField(
               controller: widget.controller,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               textInputAction: TextInputAction.next,
               onChanged: _onChanged,
               decoration: InputDecoration(
@@ -119,8 +125,8 @@ class _GradebookStudentRowState extends State<GradebookStudentRow> {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppSizes.radiusSm),
-                  borderSide: const BorderSide(
-                    color: AppColors.primary,
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.primary,
                     width: 2,
                   ),
                 ),

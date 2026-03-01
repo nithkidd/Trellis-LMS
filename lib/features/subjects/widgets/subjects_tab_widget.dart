@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/subject_model.dart';
 import '../providers/subject_provider.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -30,16 +31,16 @@ class _SubjectsTabWidgetState extends ConsumerState<SubjectsTabWidget> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Add Subject'),
+          title: const Text('បន្ថែមមុខវិជ្ជា'),
           content: TextField(
             controller: nameController,
-            decoration: const InputDecoration(labelText: 'Subject Name'),
+            decoration: const InputDecoration(labelText: 'ឈ្មោះមុខវិជ្ជា'),
             autofocus: true,
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
+              child: const Text('បោះបង់'),
             ),
             FilledButton(
               onPressed: () {
@@ -51,7 +52,43 @@ class _SubjectsTabWidgetState extends ConsumerState<SubjectsTabWidget> {
                   Navigator.of(context).pop();
                 }
               },
-              child: const Text('Add'),
+              child: const Text('បន្ថែម'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showEditSubjectDialog(BuildContext context, SubjectModel subject) {
+    final nameController = TextEditingController(text: subject.name);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('កែប្រែមុខវិជ្ជា'),
+          content: TextField(
+            controller: nameController,
+            decoration: const InputDecoration(labelText: 'ឈ្មោះមុខវិជ្ជា'),
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('បោះបង់'),
+            ),
+            FilledButton(
+              onPressed: () {
+                final name = nameController.text.trim();
+                if (name.isNotEmpty && subject.id != null) {
+                  ref
+                      .read(subjectNotifierProvider.notifier)
+                      .updateSubject(subject.copyWith(name: name));
+                  Navigator.of(context).pop();
+                }
+              },
+              child: const Text('រក្សាទុក'),
             ),
           ],
         );
@@ -70,7 +107,7 @@ class _SubjectsTabWidgetState extends ConsumerState<SubjectsTabWidget> {
           if (subjects.isEmpty) {
             return Center(
               child: Text(
-                'No subjects yet.\nTap Add below to create one.',
+                'មិនទាន់មានមុខវិជ្ជា។\nចុចបន្ថែមខាងក្រោមដើម្បីបង្កើត។',
                 textAlign: TextAlign.center,
                 style: AppTextStyles.body.copyWith(
                   color: AppColors.textSecondary,
@@ -88,18 +125,57 @@ class _SubjectsTabWidgetState extends ConsumerState<SubjectsTabWidget> {
               final subject = subjects[index];
               return ListTile(
                 title: Text(subject.name, style: AppTextStyles.subheading),
-                trailing: IconButton(
+                trailing: PopupMenuButton<String>(
                   icon: const Icon(
-                    Icons.delete_outline,
-                    color: AppColors.danger,
+                    Icons.more_vert,
+                    color: AppColors.textSecondary,
                   ),
-                  onPressed: () {
-                    if (subject.id != null) {
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+                  ),
+                  onSelected: (value) {
+                    if (value == 'edit') {
+                      _showEditSubjectDialog(context, subject);
+                    }
+                    if (value == 'remove' && subject.id != null) {
                       ref
                           .read(subjectNotifierProvider.notifier)
                           .deleteSubject(subject.id!, widget.classId);
                     }
                   },
+                  itemBuilder: (context) => [
+                    PopupMenuItem<String>(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.edit_outlined,
+                            color: Theme.of(context).colorScheme.primary,
+                            size: AppSizes.iconMd,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text('កែប្រែ'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'remove',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.delete_outline,
+                            color: AppColors.danger,
+                            size: AppSizes.iconMd,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'លុប',
+                            style: TextStyle(color: AppColors.danger),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               );
             },
@@ -108,15 +184,16 @@ class _SubjectsTabWidgetState extends ConsumerState<SubjectsTabWidget> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
           child: Text(
-            'Error: $error',
+            'កំហុស៖ $error',
             style: TextStyle(color: AppColors.danger),
           ),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'subjects_fab',
         onPressed: () => _showAddSubjectDialog(context),
         icon: const Icon(Icons.add),
-        label: const Text('Add', style: AppTextStyles.button),
+        label: const Text('បន្ថែម', style: AppTextStyles.button),
       ),
     );
   }

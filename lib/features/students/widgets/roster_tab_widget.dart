@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../students/providers/student_provider.dart';
 import 'student_list_tile_widget.dart';
+import 'student_form_dialog.dart';
 import '../../../core/theme/app_theme.dart';
 
 class RosterTabWidget extends ConsumerStatefulWidget {
@@ -18,46 +19,30 @@ class _RosterTabWidgetState extends ConsumerState<RosterTabWidget> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(studentNotifierProvider.notifier).loadStudentsForClass(widget.classId);
+      ref
+          .read(studentNotifierProvider.notifier)
+          .loadStudentsForClass(widget.classId);
     });
   }
 
-  void _showAddStudentDialog(BuildContext context) {
-    final nameController = TextEditingController();
-
-    showDialog(
+  void _showAddStudentDialog(BuildContext context) async {
+    final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Add Student'),
-          content: TextField(
-            controller: nameController,
-            decoration: const InputDecoration(labelText: 'Student full name'),
-            autofocus: true,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final name = nameController.text.trim();
-                if (name.isNotEmpty) {
-                  ref.read(studentNotifierProvider.notifier).addStudent(widget.classId, name);
-                  Navigator.of(context).pop();
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please enter a valid name')),
-                  );
-                }
-              },
-              child: const Text('Add'),
-            ),
-          ],
-        );
-      },
+      builder: (context) => StudentFormDialog(classId: widget.classId),
     );
+
+    if (result != null && mounted) {
+      ref
+          .read(studentNotifierProvider.notifier)
+          .addStudent(
+            widget.classId,
+            result['name'] as String,
+            sex: result['sex'] as String?,
+            dateOfBirth: result['dateOfBirth'] as String?,
+            address: result['address'] as String?,
+            remarks: result['remarks'] as String?,
+          );
+    }
   }
 
   @override
@@ -72,14 +57,16 @@ class _RosterTabWidgetState extends ConsumerState<RosterTabWidget> {
             width: double.infinity,
             child: FilledButton.icon(
               style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: AppSizes.paddingMd),
+                padding: const EdgeInsets.symmetric(
+                  vertical: AppSizes.paddingMd,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppSizes.radiusMd),
                 ),
               ),
               onPressed: () => _showAddStudentDialog(context),
               icon: const Icon(Icons.add, size: AppSizes.iconLg),
-              label: const Text('Add', style: AppTextStyles.button),
+              label: const Text('បន្ថែម', style: AppTextStyles.button),
             ),
           ),
         ),
@@ -91,7 +78,7 @@ class _RosterTabWidgetState extends ConsumerState<RosterTabWidget> {
                   child: Padding(
                     padding: const EdgeInsets.all(AppSizes.paddingLg),
                     child: Text(
-                      'This class roster is empty.\nTap Add above to begin.',
+                      'បញ្ជីសិស្សក្នុងថ្នាក់នេះនៅទទេ។\nចុចបន្ថែមខាងលើដើម្បីចាប់ផ្តើម។',
                       textAlign: TextAlign.center,
                       style: AppTextStyles.body.copyWith(
                         color: AppColors.textSecondary,
@@ -108,14 +95,17 @@ class _RosterTabWidgetState extends ConsumerState<RosterTabWidget> {
                   vertical: AppSizes.paddingSm,
                 ),
                 itemCount: students.length,
-                separatorBuilder: (_, __) => const SizedBox(height: AppSizes.paddingSm),
+                separatorBuilder: (_, __) =>
+                    const SizedBox(height: AppSizes.paddingSm),
                 itemBuilder: (context, index) {
                   final student = students[index];
                   return StudentListTileWidget(
                     student: student,
                     onDelete: () {
                       if (student.id != null) {
-                        ref.read(studentNotifierProvider.notifier).deleteStudent(student.id!);
+                        ref
+                            .read(studentNotifierProvider.notifier)
+                            .deleteStudent(student.id!);
                       }
                     },
                   );
@@ -124,7 +114,10 @@ class _RosterTabWidgetState extends ConsumerState<RosterTabWidget> {
             },
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (error, stack) => Center(
-              child: Text('Error: $error', style: TextStyle(color: AppColors.danger)),
+              child: Text(
+                'កំហុស៖ $error',
+                style: TextStyle(color: AppColors.danger),
+              ),
             ),
           ),
         ),

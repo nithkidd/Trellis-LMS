@@ -15,19 +15,20 @@ class StudentProfileScreen extends ConsumerStatefulWidget {
   }) : super(key: key);
 
   @override
-  ConsumerState<StudentProfileScreen> createState() => _StudentProfileScreenState();
+  ConsumerState<StudentProfileScreen> createState() =>
+      _StudentProfileScreenState();
 }
 
 class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
   @override
   Widget build(BuildContext context) {
     // We watch the new composite provider that joins scores and assignments
-    final profileState = ref.watch(studentProfileDataProvider(widget.studentId));
+    final profileState = ref.watch(
+      studentProfileDataProvider(widget.studentId),
+    );
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('${widget.studentName}\'s Profile'),
-      ),
+      appBar: AppBar(title: Text('ប្រវត្តិរូប ${widget.studentName}')),
       body: profileState.when(
         data: (data) {
           final scores = data.scores;
@@ -41,7 +42,7 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
               const Padding(
                 padding: EdgeInsets.fromLTRB(20, 16, 20, 8),
                 child: Text(
-                  'Assignment History',
+                  'ប្រវត្តិកិច្ចការ',
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -50,17 +51,26 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
                 child: scores.isEmpty
                     ? const Center(
                         child: Text(
-                          'No scores recorded yet.\nScores are added via the Class Assignments grid.',
+                          'មិនទាន់មានពិន្ទុបានកត់ត្រា។\nពិន្ទុត្រូវបានបន្ថែមតាមតារាងកិច្ចការថ្នាក់។',
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 16, color: Colors.grey, height: 1.5),
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey,
+                            height: 1.5,
+                          ),
                         ),
                       )
                     : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                         itemCount: scores.length,
                         itemBuilder: (context, index) {
                           final profileScore = scores[index];
-                          return AssignmentScoreCard(profileScore: profileScore);
+                          return AssignmentScoreCard(
+                            profileScore: profileScore,
+                          );
                         },
                       ),
               ),
@@ -69,10 +79,12 @@ class _StudentProfileScreenState extends ConsumerState<StudentProfileScreen> {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
-          child: Text('Error loading profile: $error', style: const TextStyle(fontSize: 16, color: Colors.red)),
+          child: Text(
+            'កំហុសពេលផ្ទុកប្រវត្តិរូប៖ $error',
+            style: const TextStyle(fontSize: 16, color: Colors.red),
+          ),
         ),
       ),
     );
   }
-
 }

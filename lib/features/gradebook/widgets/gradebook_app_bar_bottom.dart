@@ -1,6 +1,22 @@
 import 'package:flutter/material.dart';
 
-class GradebookAppBarBottom extends StatelessWidget implements PreferredSizeWidget {
+const Map<String, String> kMonthLabels = {
+  'Jan': 'មករា',
+  'Feb': 'កុម្ភៈ',
+  'Mar': 'មីនា',
+  'Apr': 'មេសា',
+  'May': 'ឧសភា',
+  'Jun': 'មិថុនា',
+  'Jul': 'កក្កដា',
+  'Aug': 'សីហា',
+  'Sep': 'កញ្ញា',
+  'Oct': 'តុលា',
+  'Nov': 'វិច្ឆិកា',
+  'Dec': 'ធ្នូ',
+};
+
+class GradebookAppBarBottom extends StatelessWidget
+    implements PreferredSizeWidget {
   final String month;
   final String year;
   final double maxPoints;
@@ -20,7 +36,7 @@ class GradebookAppBarBottom extends StatelessWidget implements PreferredSizeWidg
     return Container(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Text(
-        'Max Points: ${maxPoints.toInt()} • $month $year',
+        'ពិន្ទុអតិបរមា៖ ${maxPoints.toInt()} • ${kMonthLabels[month] ?? month} $year',
         style: TextStyle(
           color: Theme.of(context).colorScheme.onPrimaryContainer,
           fontWeight: FontWeight.w500,

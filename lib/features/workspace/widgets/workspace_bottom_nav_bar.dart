@@ -28,8 +28,14 @@ class WorkspaceBottomNavBar extends StatelessWidget {
         backgroundColor: Colors.white,
         selectedItemColor: Theme.of(context).colorScheme.primary,
         unselectedItemColor: Colors.grey.shade500,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
+        selectedLabelStyle: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 13,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontWeight: FontWeight.w500,
+          fontSize: 12,
+        ),
         type: BottomNavigationBarType.fixed,
         elevation: 0,
         items: const [
@@ -42,7 +48,7 @@ class WorkspaceBottomNavBar extends StatelessWidget {
               padding: EdgeInsets.only(bottom: 4.0),
               child: Icon(Icons.people, size: 26),
             ),
-            label: 'Students',
+            label: 'សិស្ស',
           ),
           BottomNavigationBarItem(
             icon: Padding(
@@ -53,7 +59,7 @@ class WorkspaceBottomNavBar extends StatelessWidget {
               padding: EdgeInsets.only(bottom: 4.0),
               child: Icon(Icons.book, size: 26),
             ),
-            label: 'Subjects',
+            label: 'មុខវិជ្ជា',
           ),
           BottomNavigationBarItem(
             icon: Padding(
@@ -64,7 +70,7 @@ class WorkspaceBottomNavBar extends StatelessWidget {
               padding: EdgeInsets.only(bottom: 4.0),
               child: Icon(Icons.assignment, size: 26),
             ),
-            label: 'Assignments',
+            label: 'កិច្ចការ',
           ),
           BottomNavigationBarItem(
             icon: Padding(
@@ -75,7 +81,7 @@ class WorkspaceBottomNavBar extends StatelessWidget {
               padding: EdgeInsets.only(bottom: 4.0),
               child: Icon(Icons.grade, size: 26),
             ),
-            label: 'Gradebook',
+            label: 'តារាងពិន្ទុ',
           ),
         ],
       ),

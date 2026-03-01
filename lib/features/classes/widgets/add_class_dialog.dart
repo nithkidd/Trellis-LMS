@@ -6,7 +6,10 @@ class AddClassDialog extends StatefulWidget {
   const AddClassDialog({Key? key, required this.onSubmit}) : super(key: key);
 
   /// Convenience method to show the dialog.
-  static void show(BuildContext context, void Function(String name, String year) onSubmit) {
+  static void show(
+    BuildContext context,
+    void Function(String name, String year) onSubmit,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AddClassDialog(onSubmit: onSubmit),
@@ -31,26 +34,28 @@ class _AddClassDialogState extends State<AddClassDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Add Class'),
+      title: const Text('បន្ថែមថ្នាក់'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           TextField(
             controller: _nameController,
-            decoration: const InputDecoration(labelText: 'Class name'),
+            decoration: const InputDecoration(labelText: 'ឈ្មោះថ្នាក់'),
             autofocus: true,
           ),
           const SizedBox(height: 12),
           TextField(
             controller: _yearController,
-            decoration: const InputDecoration(labelText: 'Academic year (e.g., 2024-2025)'),
+            decoration: const InputDecoration(
+              labelText: 'ឆ្នាំសិក្សា (ឧ. 2024-2025)',
+            ),
           ),
         ],
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: const Text('បោះបង់'),
         ),
         FilledButton(
           onPressed: () {
@@ -61,11 +66,11 @@ class _AddClassDialogState extends State<AddClassDialog> {
               Navigator.of(context).pop();
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Please fill out all fields')),
+                const SnackBar(content: Text('សូមបំពេញគ្រប់វាលទាំងអស់')),
               );
             }
           },
-          child: const Text('Add'),
+          child: const Text('បន្ថែម'),
         ),
       ],
     );

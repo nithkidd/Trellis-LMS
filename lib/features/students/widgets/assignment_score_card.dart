@@ -1,10 +1,26 @@
 import 'package:flutter/material.dart';
 import '../../gradebook/providers/score_provider.dart';
 
+const Map<String, String> kMonthLabels = {
+  'Jan': 'មករា',
+  'Feb': 'កុម្ភៈ',
+  'Mar': 'មីនា',
+  'Apr': 'មេសា',
+  'May': 'ឧសភា',
+  'Jun': 'មិថុនា',
+  'Jul': 'កក្កដា',
+  'Aug': 'សីហា',
+  'Sep': 'កញ្ញា',
+  'Oct': 'តុលា',
+  'Nov': 'វិច្ឆិកា',
+  'Dec': 'ធ្នូ',
+};
+
 class AssignmentScoreCard extends StatelessWidget {
   final StudentProfileScore profileScore;
 
-  const AssignmentScoreCard({Key? key, required this.profileScore}) : super(key: key);
+  const AssignmentScoreCard({Key? key, required this.profileScore})
+    : super(key: key);
 
   Color _getGradeColor(double percentage, BuildContext context) {
     if (percentage >= 90) return Colors.green.shade700;
@@ -32,9 +48,9 @@ class AssignmentScoreCard extends StatelessWidget {
           subtitle: Padding(
             padding: const EdgeInsets.only(top: 8.0),
             child: Text(
-              '${profileScore.assignment.month} ${profileScore.assignment.year} • '
+              '${kMonthLabels[profileScore.assignment.month] ?? profileScore.assignment.month} ${profileScore.assignment.year} • '
               '${profileScore.score.pointsEarned.toStringAsFixed(1)} / '
-              '${profileScore.assignment.maxPoints.toStringAsFixed(1)} points',
+              '${profileScore.assignment.maxPoints.toStringAsFixed(1)} ពិន្ទុ',
               style: const TextStyle(fontSize: 14),
             ),
           ),

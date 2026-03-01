@@ -32,7 +32,7 @@ class GradeBanner extends StatelessWidget {
       child: Column(
         children: [
           const Text(
-            'Overall Grade',
+            'ពិន្ទុសរុប',
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),

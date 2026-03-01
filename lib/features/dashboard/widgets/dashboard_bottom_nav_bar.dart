@@ -28,8 +28,14 @@ class DashboardBottomNavBar extends StatelessWidget {
         backgroundColor: Colors.white,
         selectedItemColor: Theme.of(context).colorScheme.primary,
         unselectedItemColor: Colors.grey.shade500,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
+        selectedLabelStyle: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 13,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          fontWeight: FontWeight.w500,
+          fontSize: 12,
+        ),
         type: BottomNavigationBarType.fixed,
         elevation: 0,
         items: const [
@@ -42,7 +48,7 @@ class DashboardBottomNavBar extends StatelessWidget {
               padding: EdgeInsets.only(bottom: 4.0),
               child: Icon(Icons.home, size: 26),
             ),
-            label: 'Home',
+            label: 'ទំព័រដើម',
           ),
           BottomNavigationBarItem(
             icon: Padding(
@@ -53,7 +59,7 @@ class DashboardBottomNavBar extends StatelessWidget {
               padding: EdgeInsets.only(bottom: 4.0),
               child: Icon(Icons.account_balance, size: 26),
             ),
-            label: 'Schools',
+            label: 'សាលា',
           ),
           BottomNavigationBarItem(
             icon: Padding(
@@ -64,7 +70,7 @@ class DashboardBottomNavBar extends StatelessWidget {
               padding: EdgeInsets.only(bottom: 4.0),
               child: Icon(Icons.bar_chart, size: 26),
             ),
-            label: 'Statistics',
+            label: 'ស្ថិតិ',
           ),
           BottomNavigationBarItem(
             icon: Padding(
@@ -75,7 +81,7 @@ class DashboardBottomNavBar extends StatelessWidget {
               padding: EdgeInsets.only(bottom: 4.0),
               child: Icon(Icons.settings, size: 26),
             ),
-            label: 'Settings',
+            label: 'ការកំណត់',
           ),
         ],
       ),
