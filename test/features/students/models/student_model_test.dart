@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lms/features/students/models/student_model.dart';
+import 'package:trellis/features/students/models/student_model.dart';
 
 void main() {
   group('StudentModel Tests', () {

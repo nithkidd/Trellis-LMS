@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lms/core/theme/app_theme_color.dart';
+import 'package:trellis/core/theme/app_theme_color.dart';
 
 void main() {
   group('AppThemeColor Tests', () {

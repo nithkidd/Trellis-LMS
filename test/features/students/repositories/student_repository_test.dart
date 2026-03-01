@@ -1,13 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:path/path.dart';
-import 'package:lms/core/database/database_helper.dart';
-import 'package:lms/features/schools/models/school_model.dart';
-import 'package:lms/features/schools/repositories/school_repository.dart';
-import 'package:lms/features/classes/models/class_model.dart';
-import 'package:lms/features/classes/repositories/class_repository.dart';
-import 'package:lms/features/students/models/student_model.dart';
-import 'package:lms/features/students/repositories/student_repository.dart';
+import 'package:trellis/core/database/database_helper.dart';
+import 'package:trellis/features/schools/models/school_model.dart';
+import 'package:trellis/features/schools/repositories/school_repository.dart';
+import 'package:trellis/features/classes/models/class_model.dart';
+import 'package:trellis/features/classes/repositories/class_repository.dart';
+import 'package:trellis/features/students/models/student_model.dart';
+import 'package:trellis/features/students/repositories/student_repository.dart';
 
 void main() {
   late SchoolRepository schoolRepo;

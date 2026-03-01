@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lms/core/utils/khmer_collator.dart';
+import 'package:trellis/core/utils/khmer_collator.dart';
 
 void main() {
   group('KhmerCollator Tests', () {

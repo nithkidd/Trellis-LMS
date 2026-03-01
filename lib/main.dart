@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
-import 'package:lms/features/dashboard/views/main_dashboard_screen.dart';
-import 'package:lms/core/theme/app_theme.dart';
-import 'package:lms/core/theme/theme_provider.dart';
-import 'package:lms/core/database/database_helper.dart';
+import 'package:trellis/features/dashboard/views/main_dashboard_screen.dart';
+import 'package:trellis/core/theme/app_theme.dart';
+import 'package:trellis/core/theme/theme_provider.dart';
+import 'package:trellis/core/database/database_helper.dart';
+import 'package:trellis/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,9 +38,41 @@ class MyApp extends ConsumerWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'ប្រព័ន្ធគ្រប់គ្រងការសិក្សា',
+      title: 'Trellis',
       theme: AppTheme.getTheme(themeColor),
-      home: const MainDashboardScreen(),
+      home: const _SplashWrapper(),
     );
+  }
+}
+
+class _SplashWrapper extends StatefulWidget {
+  const _SplashWrapper({Key? key}) : super(key: key);
+
+  @override
+  State<_SplashWrapper> createState() => _SplashWrapperState();
+}
+
+class _SplashWrapperState extends State<_SplashWrapper> {
+  bool _showSplash = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Hide splash screen after 3 seconds
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _showSplash = false;
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_showSplash) {
+      return const SplashScreen();
+    }
+    return const MainDashboardScreen();
   }
 }

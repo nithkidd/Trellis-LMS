@@ -1,0 +1,49 @@
+# Flutter Native Splash Configuration
+# Run: flutter pub run flutter_native_splash:create
+
+flutter_native_splash:
+  # This package generates native code to customize Flutter's default white native splash screen
+  # with background color and splash image.
+  # Customize the appearance of the native splash screen (the Android and iOS splash
+  # screens). Customize the appearance of the Flutter splash screen.
+
+  # image: assets/trellis_logo.svg
+  background_image: assets/trellis_logo.svg
+  background: "#ffffff"
+  color: "#ffffff"
+  color_dark: "#ffffff"
+
+  # Android-specific settings:
+  android: true
+  android_12:
+    image: assets/trellis_logo.svg
+    icon_background_color: "#ffffff"
+    icon_background_color_dark: "#001F3F"
+
+  # iOS-specific settings:
+  ios: true
+
+  # The image used in the center of the Android splash screen when no
+  # flutter_native_splash-icon is specified.  If the image has rounded corners,
+  # then do not specify the "radius" attribute.  The image will need to be square,
+  # otherwise it will be clipped. For more information, see
+  # https://developer.android.com/guide/topics/resources/drawable-resource.html#Shape
+  image: assets/trellis_logo.svg
+
+  # Supported color formats include: #RRGGBB and #RRGGBBAA, rgb(), argb(), and colors by name.
+  branding: assets/trellis_logo.svg
+
+  # The android:windowBackground of the Android resource should be sized such that
+  # the image is never distorted when installing the app as a user would install.
+  # Do not use an image that is sized by rounding up, as the application performance
+  # could suffer. Instead, prefer an image that is appropriately sized to be scaled
+  # down.  For more information, see
+  # https://developer.android.com/guide/topics/resources/drawable-resource.html
+  #
+
+  # The value of android:windowBackground of the Android resource should not
+  # be placed in the values directory of Android resources.  Instead, place the
+  # image in the mipmap directory of Android resources.  For more information, see
+  # https://developer.android.com/guide/topics/resources/drawable-resource.html#mipmap
+  android_gravity: bottom
+  ios_content_mode: center

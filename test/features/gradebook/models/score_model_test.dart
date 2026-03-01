@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:lms/features/gradebook/models/score_model.dart';
+import 'package:trellis/features/gradebook/models/score_model.dart';
 
 void main() {
   group('ScoreModel Tests', () {

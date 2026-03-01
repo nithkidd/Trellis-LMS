@@ -1,0 +1,22 @@
+# Flutter Launcher Icons
+# Run: flutter pub run flutter_launcher_icons
+
+flutter_launcher_icons:
+  image_path: "assets/trellis_logo.svg"
+  image_path_ios: "assets/trellis_logo.svg"
+
+  android: true
+  ios: true
+
+  # Android
+  android_adaptive_icon_background: "#ffffff"
+  android_adaptive_icon_foreground: "assets/trellis_logo.svg"
+
+  # iOS
+  ios_settings:
+    # Remove alpha channel from image, use if you need transparency
+    # remove_alpha_ios: true
+
+  # macOS
+
+  # Windows
