@@ -1,24 +1,30 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:lms/features/schools/views/school_dashboard_screen.dart';
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
+import 'package:lms/features/dashboard/views/main_dashboard_screen.dart';
+import 'package:lms/core/theme/app_theme.dart';
+import 'package:lms/core/database/database_helper.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 'dart:io' Platforms fail on the web. 
-  // We use foundation's defaultTargetPlatform to check OS safely across all platforms.
-  if (!kIsWeb && (defaultTargetPlatform == TargetPlatform.windows || defaultTargetPlatform == TargetPlatform.linux)) {
+  // Initialize database factory based on platform
+  if (kIsWeb) {
+    // Use web-compatible database
+    databaseFactory = databaseFactoryFfiWeb;
+  } else if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+    // Use FFI for desktop platforms
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
   }
 
-  runApp(
-    const ProviderScope(
-      child: MyApp(),
-    ),
-  );
+  // Initialize the database before running the app
+  await DatabaseHelper.instance.database;
+
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {
@@ -27,12 +33,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Teacher LMS',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const SchoolDashboardScreen(),
+      theme: AppTheme.themeData,
+      home: const MainDashboardScreen(),
     );
   }
 }

@@ -1,30 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/assignment_provider.dart';
-import '../../gradebook/views/gradebook_grid_screen.dart';
+import '../../subjects/providers/subject_provider.dart';
+import '../../subjects/models/subject_model.dart';
+import 'assignment_list_tile_widget.dart';
+import '../../../core/theme/app_theme.dart';
 
 const List<String> kMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-class ClassAssignmentsScreen extends ConsumerStatefulWidget {
+class AssignmentsTabWidget extends ConsumerStatefulWidget {
   final int classId;
-  final String className;
 
-  const ClassAssignmentsScreen({
-    Key? key,
-    required this.classId,
-    required this.className,
-  }) : super(key: key);
+  const AssignmentsTabWidget({Key? key, required this.classId}) : super(key: key);
 
   @override
-  ConsumerState<ClassAssignmentsScreen> createState() => _ClassAssignmentsScreenState();
+  ConsumerState<AssignmentsTabWidget> createState() => _AssignmentsTabWidgetState();
 }
 
-class _ClassAssignmentsScreenState extends ConsumerState<ClassAssignmentsScreen> {
+class _AssignmentsTabWidgetState extends ConsumerState<AssignmentsTabWidget> {
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(assignmentNotifierProvider.notifier).loadAssignmentsForClass(widget.classId);
+      ref.read(subjectNotifierProvider.notifier).loadSubjectsForClass(widget.classId);
     });
   }
 
@@ -33,6 +32,17 @@ class _ClassAssignmentsScreenState extends ConsumerState<ClassAssignmentsScreen>
     final maxPointsController = TextEditingController(text: '100');
     String selectedMonth = kMonths[DateTime.now().month - 1];
     String selectedYear = DateTime.now().year.toString();
+    int? selectedSubjectId;
+
+    final subjectsState = ref.watch(subjectNotifierProvider);
+    List<SubjectModel> subjects = [];
+    if (subjectsState is AsyncData) {
+      subjects = subjectsState.value!;
+    }
+    
+    if (subjects.isNotEmpty) {
+      selectedSubjectId = subjects.first.id;
+    }
 
     showDialog(
       context: context,
@@ -40,20 +50,30 @@ class _ClassAssignmentsScreenState extends ConsumerState<ClassAssignmentsScreen>
         return StatefulBuilder(
           builder: (context, setStateDialog) {
             return AlertDialog(
-              title: const Text('Add New Assignment'),
+              title: const Text('New Assignment'),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    if (subjects.isEmpty)
+                      const Text('Please add a Subject first in the Class options.', style: TextStyle(color: Colors.red))
+                    else
+                      DropdownButtonFormField<int>(
+                        value: selectedSubjectId,
+                        decoration: const InputDecoration(labelText: 'Subject'),
+                        items: subjects.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))).toList(),
+                        onChanged: (val) => setStateDialog(() => selectedSubjectId = val),
+                      ),
+                    const SizedBox(height: 12),
                     TextField(
                       controller: nameController,
-                      decoration: const InputDecoration(labelText: 'Assignment Name (e.g., Midterm)'),
+                      decoration: const InputDecoration(labelText: 'Assignment name'),
                       autofocus: true,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     TextField(
                       controller: maxPointsController,
-                      decoration: const InputDecoration(labelText: 'Max Points'),
+                      decoration: const InputDecoration(labelText: 'Max points'),
                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     ),
                     const SizedBox(height: 16),
@@ -86,19 +106,18 @@ class _ClassAssignmentsScreenState extends ConsumerState<ClassAssignmentsScreen>
                   onPressed: () => Navigator.of(context).pop(),
                   child: const Text('Cancel'),
                 ),
-                ElevatedButton(
+                FilledButton(
                   onPressed: () {
                     final name = nameController.text.trim();
                     final maxPts = double.tryParse(maxPointsController.text.trim());
-                    
-                    if (name.isNotEmpty && maxPts != null && maxPts > 0) {
+                    if (selectedSubjectId != null && name.isNotEmpty && maxPts != null && maxPts > 0) {
                       ref.read(assignmentNotifierProvider.notifier).addAssignment(
-                        widget.classId, name, selectedMonth, selectedYear, maxPts
+                        widget.classId, selectedSubjectId!, name, selectedMonth, selectedYear, maxPts,
                       );
                       Navigator.of(context).pop();
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please enter a valid name and max points')),
+                        const SnackBar(content: Text('Please select a subject, enter a valid name and max points')),
                       );
                     }
                   },
@@ -106,7 +125,7 @@ class _ClassAssignmentsScreenState extends ConsumerState<ClassAssignmentsScreen>
                 ),
               ],
             );
-          }
+          },
         );
       },
     );
@@ -117,96 +136,44 @@ class _ClassAssignmentsScreenState extends ConsumerState<ClassAssignmentsScreen>
     final assignmentsState = ref.watch(assignmentNotifierProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('${widget.className} Assignments'),
-      ),
+      backgroundColor: Colors.transparent,
       body: assignmentsState.when(
         data: (assignments) {
           if (assignments.isEmpty) {
-            return const Center(
+            return Center(
               child: Text(
-                'No assignments created yet.\nTap + to set one up.',
+                'No assignments yet.\nTap Add below to create one.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16, color: Colors.grey, height: 1.5),
+                style: AppTextStyles.body.copyWith(color: AppColors.textSecondary, height: 1.5),
               ),
             );
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(AppSizes.paddingMd),
             itemCount: assignments.length,
             itemBuilder: (context, index) {
               final assignment = assignments[index];
-              return Card(
-                elevation: 2,
-                margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.all(16),
-                  leading: CircleAvatar(
-                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                    child: const Icon(Icons.assignment),
-                  ),
-                  title: Text(
-                    assignment.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                  ),
-                  subtitle: Text('${assignment.month} ${assignment.year} • Max: ${assignment.maxPoints} pts'),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.assessment, color: Colors.blue),
-                        tooltip: 'Batch Grade',
-                        onPressed: () {
-                          if (assignment.id != null) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => GradebookGridScreen(
-                                  assignment: assignment,
-                                ),
-                              ),
-                            );
-                          }
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () {
-                          if (assignment.id != null) {
-                            ref.read(assignmentNotifierProvider.notifier).deleteAssignment(assignment.id!);
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                  onTap: () {
-                    if (assignment.id != null) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => GradebookGridScreen(
-                            assignment: assignment,
-                          ),
-                        ),
-                      );
-                    }
-                  },
-                ),
+              return AssignmentListTileWidget(
+                assignment: assignment,
+                onDelete: () {
+                  if (assignment.id != null) {
+                    ref.read(assignmentNotifierProvider.notifier).deleteAssignment(assignment.id!);
+                  }
+                },
               );
             },
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
-          child: Text('Error: $error', style: const TextStyle(color: Colors.red)),
+          child: Text('Error: $error', style: TextStyle(color: AppColors.danger)),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddAssignmentDialog(context, ref),
         icon: const Icon(Icons.add),
-        label: const Text('Add Assignment'),
+        label: const Text('Add', style: AppTextStyles.button),
       ),
     );
   }

@@ -67,6 +67,18 @@ class ScoreRepository {
     );
   }
 
+  Future<List<ScoreModel>> getScoresByClassId(int classId) async {
+    Database db = await _dbHelper.database;
+    final List<Map<String, dynamic>> maps = await db.rawQuery('''
+      SELECT s.*
+      FROM ${DatabaseHelper.tableScores} s
+      JOIN ${DatabaseHelper.tableAssignments} a ON s.assignment_id = a.id
+      WHERE a.class_id = ?
+    ''', [classId]);
+    return maps.map((map) => ScoreModel.fromMap(map)).toList();
+  }
+
+
   /// Calculates the average grade percentage for a student across all their scores.
   /// Needs to JOIN with assignments table to get max_points.
   Future<double> getAverageScoreByStudentId(int studentId) async {

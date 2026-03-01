@@ -1,13 +1,15 @@
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
 class DatabaseHelper {
   static const _databaseName = "TeacherLMS.db";
-  static const _databaseVersion = 4; // Incremented for Assignment-First schema
+  static const _databaseVersion = 6;
 
   // Table Names
   static const tableSchools = 'schools';
   static const tableClasses = 'classes';
+  static const tableSubjects = 'subjects';
   static const tableStudents = 'students';
   static const tableAssignments = 'assignments';
   static const tableScores = 'scores';
@@ -25,7 +27,10 @@ class DatabaseHelper {
   }
 
   Future<Database> _initDatabase() async {
-    String path = join(await getDatabasesPath(), _databaseName);
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, _databaseName);
+    debugPrint('📂 DATABASE: $path');
+
     return await openDatabase(
       path,
       version: _databaseVersion,
@@ -45,10 +50,11 @@ class DatabaseHelper {
   }
 
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 4) {
+    if (oldVersion < 6) {
       await db.execute('DROP TABLE IF EXISTS $tableScores');
       await db.execute('DROP TABLE IF EXISTS $tableAssignments');
       await db.execute('DROP TABLE IF EXISTS $tableStudents');
+      await db.execute('DROP TABLE IF EXISTS $tableSubjects');
       await db.execute('DROP TABLE IF EXISTS $tableClasses');
       await db.execute('DROP TABLE IF EXISTS $tableSchools');
       await _createTables(db);
@@ -60,7 +66,9 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE $tableSchools (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL
+        name TEXT NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        display_order INTEGER DEFAULT 0
       )
     ''');
 
@@ -75,12 +83,23 @@ class DatabaseHelper {
       )
     ''');
 
+    // Subjects Table
+    await db.execute('''
+      CREATE TABLE $tableSubjects (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        class_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        FOREIGN KEY (class_id) REFERENCES $tableClasses (id) ON DELETE CASCADE
+      )
+    ''');
+
     // Students Table
     await db.execute('''
       CREATE TABLE $tableStudents (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         class_id INTEGER NOT NULL,
         name TEXT NOT NULL,
+        remarks TEXT,
         FOREIGN KEY (class_id) REFERENCES $tableClasses (id) ON DELETE CASCADE
       )
     ''');
@@ -90,11 +109,13 @@ class DatabaseHelper {
       CREATE TABLE $tableAssignments (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         class_id INTEGER NOT NULL,
+        subject_id INTEGER NOT NULL,
         name TEXT NOT NULL,
         month TEXT NOT NULL,
         year TEXT NOT NULL,
         max_points REAL NOT NULL,
-        FOREIGN KEY (class_id) REFERENCES $tableClasses (id) ON DELETE CASCADE
+        FOREIGN KEY (class_id) REFERENCES $tableClasses (id) ON DELETE CASCADE,
+        FOREIGN KEY (subject_id) REFERENCES $tableSubjects (id) ON DELETE CASCADE
       )
     ''');
 
@@ -113,7 +134,6 @@ class DatabaseHelper {
     ''');
   }
 
-  
   Future close() async {
     if (_database != null) {
       await _database!.close();

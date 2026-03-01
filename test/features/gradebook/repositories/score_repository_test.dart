@@ -10,6 +10,8 @@ import 'package:lms/features/students/models/student_model.dart';
 import 'package:lms/features/students/repositories/student_repository.dart';
 import 'package:lms/features/assignments/models/assignment_model.dart';
 import 'package:lms/features/assignments/repositories/assignment_repository.dart';
+import 'package:lms/features/subjects/models/subject_model.dart';
+import 'package:lms/features/subjects/repositories/subject_repository.dart';
 import 'package:lms/features/gradebook/models/score_model.dart';
 import 'package:lms/features/gradebook/repositories/score_repository.dart';
 
@@ -45,9 +47,12 @@ void main() {
     studentRepo = StudentRepository();
     testStudentId = await studentRepo.insert(StudentModel(classId: testClassId!, name: 'Alice Smith'));
 
+    final subjectRepo = SubjectRepository();
+    final testSubjectId = await subjectRepo.insert(SubjectModel(classId: testClassId!, name: 'Math'));
+
     assignmentRepo = AssignmentRepository();
-    testAssignmentId1 = await assignmentRepo.insert(AssignmentModel(classId: testClassId!, name: 'Midterm', month: 'Jan', year: '2023', maxPoints: 100));
-    testAssignmentId2 = await assignmentRepo.insert(AssignmentModel(classId: testClassId!, name: 'Final', month: 'Feb', year: '2023', maxPoints: 200));
+    testAssignmentId1 = await assignmentRepo.insert(AssignmentModel(classId: testClassId!, subjectId: testSubjectId, name: 'Midterm', month: 'Jan', year: '2023', maxPoints: 100));
+    testAssignmentId2 = await assignmentRepo.insert(AssignmentModel(classId: testClassId!, subjectId: testSubjectId, name: 'Final', month: 'Feb', year: '2023', maxPoints: 200));
   });
 
   tearDown(() async {

@@ -1,0 +1,165 @@
+Resolving dependencies...
+Downloading packages...
+  _fe_analyzer_shared 91.0.0 (97.0.0 available)
+  analyzer 8.4.1 (11.0.0 available)
+  characters 1.4.0 (1.4.1 available)
+  matcher 0.12.17 (0.12.19 available)
+  material_color_utilities 0.11.1 (0.13.0 available)
+  meta 1.17.0 (1.18.1 available)
+  test 1.26.3 (1.30.0 available)
+  test_api 0.7.7 (0.7.10 available)
+  test_core 0.6.12 (0.6.16 available)
+Got dependencies!
+9 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+00:00 +0: loading D:/lms/test/features/classes/models/class_model_test.dart
+00:00 +0 -1: loading D:/lms/test/features/classes/models/class_model_test.dart [E]
+  Failed to load "D:/lms/test/features/classes/models/class_model_test.dart":
+  Compilation failed for testPath=D:/lms/test/features/classes/models/class_model_test.dart: test/features/classes/models/class_model_test.dart:7:36: Error: Required named parameter 'schoolId' must be provided.
+        final classModel = ClassModel(
+                                     ^
+  lib/features/classes/models/class_model.dart:7:3: Context: Found this candidate, but the arguments don't match.
+    ClassModel({
+    ^^^^^^^^^^
+  test/features/classes/models/class_model_test.dart:35:36: Error: Required named parameter 'schoolId' must be provided.
+        final classModel = ClassModel(
+                                     ^
+  lib/features/classes/models/class_model.dart:7:3: Context: Found this candidate, but the arguments don't match.
+    ClassModel({
+    ^^^^^^^^^^
+  .
+  Error: The Dart compiler exited unexpectedly.
+  package:flutter_tools/src/base/common.dart 34:3  throwToolExit
+  package:flutter_tools/src/compile.dart 911:11    DefaultResidentCompiler._compile.<fn>
+  dart:async/zone.dart 1538:47                     _rootRunUnary
+  dart:async/zone.dart 1429:19                     _CustomZone.runUnary
+  dart:async/future_impl.dart 948:45               Future._propagateToListeners.handleValueCallback
+  dart:async/future_impl.dart 977:13               Future._propagateToListeners
+  dart:async/future_impl.dart 862:9                Future._propagateToListeners
+  dart:async/future_impl.dart 720:5                Future._completeWithValue
+  dart:async/future_impl.dart 804:7                Future._asyncCompleteWithValue.<fn>
+  dart:async/zone.dart 1525:13                     _rootRun
+  dart:async/zone.dart 1422:19                     _CustomZone.run
+  dart:async/zone.dart 1321:7                      _CustomZone.runGuarded
+  dart:async/zone.dart 1362:23                     _CustomZone.bindCallbackGuarded.<fn>
+  dart:async/schedule_microtask.dart 40:35         _microtaskLoop
+  dart:async/schedule_microtask.dart 49:5          _startMicrotaskLoop
+  dart:isolate-patch/isolate_patch.dart 127:13     _runPendingImmediateCallback
+  dart:isolate-patch/isolate_patch.dart 194:5      _RawReceivePort._handleMessage
+  
+00:00 +0 -2: loading D:/lms/test/features/gradebook/models/score_model_test.dart [E]
+  Failed to load "D:/lms/test/features/gradebook/models/score_model_test.dart":
+  Compilation failed for testPath=D:/lms/test/features/gradebook/models/score_model_test.dart: test/features/gradebook/models/score_model_test.dart:10:9: Error: No named parameter with the name 'assignmentName'.
+          assignmentName: 'Midterm',
+          ^^^^^^^^^^^^^^
+  lib/features/gradebook/models/score_model.dart:7:3: Context: Found this candidate, but the arguments don't match.
+    ScoreModel({
+    ^^^^^^^^^^
+  test/features/gradebook/models/score_model_test.dart:46:9: Error: No named parameter with the name 'assignmentName'.
+          assignmentName: 'Quiz 1',
+          ^^^^^^^^^^^^^^
+  lib/features/gradebook/models/score_model.dart:7:3: Context: Found this candidate, but the arguments don't match.
+    ScoreModel({
+    ^^^^^^^^^^
+  test/features/gradebook/models/score_model_test.dart:37:20: Error: The getter 'assignmentName' isn't defined for the type 'ScoreModel'.
+   - 'ScoreModel' is from 'package:lms/features/gradebook/models/score_model.dart' ('lib/features/gradebook/models/score_model.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'assignmentName'.
+        expect(score.assignmentName, 'Final Exam');
+                     ^^^^^^^^^^^^^^
+  test/features/gradebook/models/score_model_test.dart:39:20: Error: The getter 'maxPoints' isn't defined for the type 'ScoreModel'.
+   - 'ScoreModel' is from 'package:lms/features/gradebook/models/score_model.dart' ('lib/features/gradebook/models/score_model.dart').
+  Try correcting the name to the name of an existing getter, or defining a getter or field named 'maxPoints'.
+        expect(score.maxPoints, 100.0);
+                     ^^^^^^^^^
+  .
+00:00 +0 -2: loading D:/lms/test/features/classes/models/class_model_test.dart [E]
+  Error: The Dart compiler exited unexpectedly.
+  package:flutter_tools/src/base/common.dart 34:3  throwToolExit
+  package:flutter_tools/src/compile.dart 911:11    DefaultResidentCompiler._compile.<fn>
+  dart:async/zone.dart 1538:47                     _rootRunUnary
+  dart:async/zone.dart 1429:19                     _CustomZone.runUnary
+  dart:async/future_impl.dart 948:45               Future._propagateToListeners.handleValueCallback
+  dart:async/future_impl.dart 977:13               Future._propagateToListeners
+  dart:async/future_impl.dart 862:9                Future._propagateToListeners
+  dart:async/future_impl.dart 720:5                Future._completeWithValue
+  dart:async/future_impl.dart 804:7                Future._asyncCompleteWithValue.<fn>
+  dart:async/zone.dart 1525:13                     _rootRun
+  dart:async/zone.dart 1422:19                     _CustomZone.run
+  dart:async/zone.dart 1321:7                      _CustomZone.runGuarded
+  dart:async/zone.dart 1362:23                     _CustomZone.bindCallbackGuarded.<fn>
+  dart:async/schedule_microtask.dart 40:35         _microtaskLoop
+  dart:async/schedule_microtask.dart 49:5          _startMicrotaskLoop
+  dart:isolate-patch/isolate_patch.dart 127:13     _runPendingImmediateCallback
+  dart:isolate-patch/isolate_patch.dart 194:5      _RawReceivePort._handleMessage
+  
+00:00 +0 -2: D:/lms/test/features/classes/repositories/class_repository_test.dart: (setUpAll)
+00:00 +0 -2: D:/lms/test/features/classes/repositories/class_repository_test.dart: ClassRepository Tests should insert and retrieve a class
+📂 DATABASE: D:\lms\data\TeacherLMS.db
+00:00 +1 -2: D:/lms/test/features/classes/repositories/class_repository_test.dart: ClassRepository Tests should retrieve classes by schoolId
+📂 DATABASE: D:\lms\data\TeacherLMS.db
+00:00 +2 -2: D:/lms/test/features/classes/repositories/class_repository_test.dart: ClassRepository Tests should update a class
+📂 DATABASE: D:\lms\data\TeacherLMS.db
+00:00 +3 -2: D:/lms/test/features/classes/repositories/class_repository_test.dart: ClassRepository Tests should delete a class
+📂 DATABASE: D:\lms\data\TeacherLMS.db
+00:00 +4 -2: D:/lms/test/features/classes/repositories/class_repository_test.dart: ClassRepository Tests should cascade delete classes when school is deleted
+📂 DATABASE: D:\lms\data\TeacherLMS.db
+00:00 +5 -2: D:/lms/test/features/classes/repositories/class_repository_test.dart: (tearDownAll)
+00:00 +5 -2: D:/lms/test/features/gradebook/repositories/score_repository_test.dart: (setUpAll)
+00:00 +5 -2: D:/lms/test/features/gradebook/repositories/score_repository_test.dart: ScoreRepository Tests should upsert and retrieve a score
+📂 DATABASE: D:\lms\data\TeacherLMS.db
+00:00 +6 -2: D:/lms/test/features/gradebook/repositories/score_repository_test.dart: ScoreRepository Tests upsert should overwrite existing score for the same assignment
+📂 DATABASE: D:\lms\data\TeacherLMS.db
+00:01 +7 -2: D:/lms/test/features/schools/repositories/school_repository_test.dart: (setUpAll)
+00:01 +7 -2: D:/lms/test/features/gradebook/repositories/score_repository_test.dart: ScoreRepository Tests should calculate average score correctly across assignments
+📂 DATABASE: D:\lms\data\TeacherLMS.db
+00:01 +7 -2: D:/lms/test/features/schools/repositories/school_repository_test.dart: SchoolRepository Tests should insert and retrieve a school
+📂 DATABASE: D:\lms\data\TeacherLMS.db
+00:01 +8 -2: D:/lms/test/features/schools/repositories/school_repository_test.dart: SchoolRepository Tests should insert and retrieve a school
+00:01 +8 -2: D:/lms/test/features/gradebook/repositories/score_repository_test.dart: ScoreRepository Tests should cascade delete scores when student is deleted
+📂 DATABASE: D:\lms\data\TeacherLMS.db
+00:01 +8 -2: D:/lms/test/features/schools/repositories/school_repository_test.dart: SchoolRepository Tests should insert and retrieve a school
+error SqfliteFfiException(sqlite_error: 5, , SqliteException(5): while selecting from statement, database is locked, database is locked (code 5)
+  Causing statement: PRAGMA user_version}) DatabaseException(SqliteException(5): while selecting from statement, database is locked, database is locked (code 5)
+  Causing statement: PRAGMA user_version) sql 'PRAGMA user_version' {details: {database: {path: D:\lms\data\TeacherLMS.db, id: 1, readOnly: false, singleInstance: true}}} during open, closing...
+00:01 +9 -2: D:/lms/test/features/schools/repositories/school_repository_test.dart: SchoolRepository Tests should insert and retrieve a school
+00:01 +9 -2: D:/lms/test/features/gradebook/repositories/score_repository_test.dart: ScoreRepository Tests should cascade delete scores when assignment is deleted
+📂 DATABASE: D:\lms\data\TeacherLMS.db
+00:01 +9 -3: D:/lms/test/features/gradebook/repositories/score_repository_test.dart: ScoreRepository Tests should cascade delete scores when assignment is deleted
+00:01 +9 -3: D:/lms/test/features/schools/repositories/school_repository_test.dart: SchoolRepository Tests should insert and retrieve a school [E]
+  SqfliteFfiException(sqlite_error: 5, , SqliteException(5): while selecting from statement, database is locked, database is locked (code 5)
+    Causing statement: PRAGMA user_version}) DatabaseException(SqliteException(5): while selecting from statement, database is locked, database is locked (code 5)
+    Causing statement: PRAGMA user_version) sql 'PRAGMA user_version' {details: {database: {path: D:\lms\data\TeacherLMS.db, id: 1, readOnly: false, singleInstance: true}}}
+  package:sqflite_common_ffi/src/method_call.dart 125:9  responseToResultOrThrow
+  package:sqflite_common_ffi/src/isolate.dart 35:12      SqfliteIsolate.handle
+  
+00:01 +10 -3: D:/lms/test/features/students/models/student_model_test.dart: StudentModel Tests should map properties correctly toMap()
+00:01 +11 -3: D:/lms/test/features/schools/repositories/school_repository_test.dart: SchoolRepository Tests should retrieve all schools
+📂 DATABASE: D:\lms\data\TeacherLMS.db
+00:01 +12 -3: D:/lms/test/features/schools/repositories/school_repository_test.dart: SchoolRepository Tests should retrieve all schools
+00:01 +13 -3: D:/lms/test/features/schools/repositories/school_repository_test.dart: SchoolRepository Tests should retrieve all schools
+00:01 +13 -4: D:/lms/test/features/schools/repositories/school_repository_test.dart: SchoolRepository Tests should retrieve all schools [E]
+  Expected: <2>
+    Actual: <45>
+  
+  package:matcher                                                      expect
+  package:flutter_test/src/widget_tester.dart 473:18                   expect
+  test\features\schools\repositories\school_repository_test.dart 46:7  main.<fn>.<fn>
+  
+00:01 +13 -4: D:/lms/test/features/schools/repositories/school_repository_test.dart: SchoolRepository Tests should update a school
+📂 DATABASE: D:\lms\data\TeacherLMS.db
+00:01 +14 -4: D:/lms/test/features/schools/repositories/school_repository_test.dart: SchoolRepository Tests should delete a school
+📂 DATABASE: D:\lms\data\TeacherLMS.db
+00:01 +15 -4: D:/lms/test/features/schools/repositories/school_repository_test.dart: (tearDownAll)
+00:01 +15 -4: D:/lms/test/features/students/repositories/student_repository_test.dart: (setUpAll)
+00:01 +15 -4: D:/lms/test/features/students/repositories/student_repository_test.dart: StudentRepository Tests should insert and retrieve a student
+📂 DATABASE: D:\lms\data\TeacherLMS.db
+00:01 +16 -4: D:/lms/test/features/students/repositories/student_repository_test.dart: StudentRepository Tests should get students by classId
+📂 DATABASE: D:\lms\data\TeacherLMS.db
+00:01 +17 -4: D:/lms/test/features/students/repositories/student_repository_test.dart: StudentRepository Tests should update a student
+📂 DATABASE: D:\lms\data\TeacherLMS.db
+00:01 +18 -4: D:/lms/test/features/students/repositories/student_repository_test.dart: StudentRepository Tests should delete a student
+📂 DATABASE: D:\lms\data\TeacherLMS.db
+00:01 +19 -4: D:/lms/test/features/students/repositories/student_repository_test.dart: StudentRepository Tests should cascade delete students when class is deleted
+📂 DATABASE: D:\lms\data\TeacherLMS.db
+00:01 +20 -4: D:/lms/test/features/students/repositories/student_repository_test.dart: (tearDownAll)
+00:01 +20 -4: Some tests failed.

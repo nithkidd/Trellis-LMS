@@ -48,6 +48,16 @@ class StudentNotifier extends AsyncNotifier<List<StudentModel>> {
       return await repository.getStudentsByClassId(_currentClassId!);
     });
   }
+
+  Future<void> updateStudent(StudentModel updatedStudent) async {
+    if (_currentClassId == null) return;
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      final repository = ref.read(studentRepositoryProvider);
+      await repository.update(updatedStudent);
+      return await repository.getStudentsByClassId(_currentClassId!);
+    });
+  }
 }
 
 final studentNotifierProvider = AsyncNotifierProvider<StudentNotifier, List<StudentModel>>(() {

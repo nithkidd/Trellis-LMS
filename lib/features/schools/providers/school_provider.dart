@@ -36,8 +36,46 @@ class SchoolNotifier extends AsyncNotifier<List<SchoolModel>> {
       return _loadSchools();
     });
   }
+
+  Future<void> updateSchool(int id, String newName) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      final repository = ref.read(schoolRepositoryProvider);
+      await repository.update(SchoolModel(id: id, name: newName));
+      return _loadSchools();
+    });
+  }
+
+  Future<void> reorderSchools(int oldIndex, int newIndex) async {
+    final currentList = state.value;
+    if (currentList == null) return;
+
+    // Create a mutable copy
+    final list = List<SchoolModel>.from(currentList);
+
+    // Adjust newIndex for removal
+    if (oldIndex < newIndex) {
+      newIndex -= 1;
+    }
+
+    // Move the item
+    final item = list.removeAt(oldIndex);
+    list.insert(newIndex, item);
+
+    // Update display order for all items
+    final repository = ref.read(schoolRepositoryProvider);
+    for (int i = 0; i < list.length; i++) {
+      if (list[i].id != null) {
+        await repository.updateDisplayOrder(list[i].id!, list.length - i);
+      }
+    }
+
+    // Reload to get fresh data
+    state = await AsyncValue.guard(() => _loadSchools());
+  }
 }
 
-final schoolNotifierProvider = AsyncNotifierProvider<SchoolNotifier, List<SchoolModel>>(() {
-  return SchoolNotifier();
-});
+final schoolNotifierProvider =
+    AsyncNotifierProvider<SchoolNotifier, List<SchoolModel>>(() {
+      return SchoolNotifier();
+    });

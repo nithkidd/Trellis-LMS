@@ -1,14 +1,12 @@
-class StudentModel {
+class SubjectModel {
   final int? id;
   final int classId;
   final String name;
-  final String? remarks;
 
-  StudentModel({
+  SubjectModel({
     this.id,
     required this.classId,
     required this.name,
-    this.remarks,
   });
 
   Map<String, dynamic> toMap() {
@@ -16,30 +14,26 @@ class StudentModel {
       'id': id,
       'class_id': classId,
       'name': name,
-      'remarks': remarks,
     };
   }
 
-  factory StudentModel.fromMap(Map<String, dynamic> map) {
-    return StudentModel(
+  factory SubjectModel.fromMap(Map<String, dynamic> map) {
+    return SubjectModel(
       id: map['id'] != null ? map['id'] as int : null,
       classId: map['class_id'] as int,
       name: map['name'] ?? '',
-      remarks: map['remarks'] as String?,
     );
   }
 
-  StudentModel copyWith({
+  SubjectModel copyWith({
     int? id,
     int? classId,
     String? name,
-    String? remarks,
   }) {
-    return StudentModel(
+    return SubjectModel(
       id: id ?? this.id,
       classId: classId ?? this.classId,
       name: name ?? this.name,
-      remarks: remarks ?? this.remarks,
     );
   }
 }

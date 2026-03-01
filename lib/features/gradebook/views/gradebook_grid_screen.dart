@@ -4,6 +4,8 @@ import '../../assignments/models/assignment_model.dart';
 import '../../students/providers/student_provider.dart';
 import '../providers/score_provider.dart';
 import '../models/score_model.dart';
+import '../widgets/gradebook_app_bar_bottom.dart';
+import '../widgets/gradebook_student_row.dart';
 
 class GradebookGridScreen extends ConsumerStatefulWidget {
   final AssignmentModel assignment;
@@ -18,14 +20,12 @@ class GradebookGridScreen extends ConsumerStatefulWidget {
 }
 
 class _GradebookGridScreenState extends ConsumerState<GradebookGridScreen> {
-  // We use this map to store FocusNodes and Controllers for rapid data entry
   final Map<int, TextEditingController> _controllers = {};
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Load all students and scores for this assignment
       ref.read(studentNotifierProvider.notifier).loadStudentsForClass(widget.assignment.classId);
       ref.read(scoreNotifierProvider.notifier).loadScoresForAssignment(widget.assignment.id!);
     });
@@ -33,8 +33,8 @@ class _GradebookGridScreenState extends ConsumerState<GradebookGridScreen> {
 
   @override
   void dispose() {
-    for (var controller in _controllers.values) {
-      controller.dispose();
+    for (var c in _controllers.values) {
+      c.dispose();
     }
     super.dispose();
   }
@@ -47,18 +47,10 @@ class _GradebookGridScreenState extends ConsumerState<GradebookGridScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.assignment.name),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(40),
-          child: Container(
-            padding: const EdgeInsets.only(bottom: 8.0),
-            child: Text(
-              'Max Points: ${widget.assignment.maxPoints} • ${widget.assignment.month} ${widget.assignment.year}',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onPrimaryContainer,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
+        bottom: GradebookAppBarBottom(
+          month: widget.assignment.month,
+          year: widget.assignment.year,
+          maxPoints: widget.assignment.maxPoints,
         ),
       ),
       body: studentsState.when(
@@ -67,101 +59,47 @@ class _GradebookGridScreenState extends ConsumerState<GradebookGridScreen> {
             return const Center(child: Text('No students in this class.'));
           }
 
-          // Convert scores list to a map of Map<StudentId, ScoreModel> for O(1) lookups
+          // Build a studentId → ScoreModel lookup map
           Map<int, ScoreModel> studentScores = {};
           if (scoresState is AsyncData) {
-             for (var score in scoresState.value!) {
-                studentScores[score.studentId] = score;
-             }
+            for (var score in scoresState.value!) {
+              studentScores[score.studentId] = score;
+            }
           }
 
           return ListView.separated(
-             padding: const EdgeInsets.all(16),
-             itemCount: students.length,
-             separatorBuilder: (context, index) => const Divider(),
-             itemBuilder: (context, index) {
-                final student = students[index];
-                final score = studentScores[student.id];
-                
-                // Initialize controller if it doesn't exist
-                if (!_controllers.containsKey(student.id)) {
-                  _controllers[student.id!] = TextEditingController(
-                    text: score != null ? score.pointsEarned.toString() : '',
-                  );
-                }
+            padding: const EdgeInsets.all(16),
+            itemCount: students.length,
+            separatorBuilder: (context, index) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              final student = students[index];
+              final score = studentScores[student.id];
 
-                // If riverpod updated the score natively in the background, sync the controller cautiously
-                // (Be careful not to jump the cursor if they are actively typing)
-                final controller = _controllers[student.id!]!;
-                if (score != null && controller.text.isEmpty) {
-                   controller.text = score.pointsEarned.toString();
-                }
-
-                final focusNode = FocusNode();
-
-                return Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
-                      child: Text(student.name[0], style: const TextStyle(fontWeight: FontWeight.bold)),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        student.name,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                    Expanded(
-                      flex: 1,
-                      child: Focus(
-                        onFocusChange: (hasFocus) {
-                          // Save on blur
-                          if (!hasFocus) {
-                             final input = controller.text.trim();
-                             if (input.isNotEmpty) {
-                                final points = double.tryParse(input);
-                                if (points != null && widget.assignment.id != null) {
-                                  ref.read(scoreNotifierProvider.notifier).saveScoreForAssignment(
-                                    student.id!, widget.assignment.id!, points
-                                  );
-                                }
-                             }
-                          }
-                        },
-                        child: TextField(
-                          controller: controller,
-                          focusNode: focusNode,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          textInputAction: TextInputAction.next,
-                          decoration: InputDecoration(
-                            hintText: '---',
-                            filled: true,
-                            fillColor: (score != null) ? Colors.green.withOpacity(0.05) : null,
-                            suffixText: '/ ${widget.assignment.maxPoints.toInt()}',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          onSubmitted: (value) {
-                             // Save on enter/next
-                             if (value.isNotEmpty) {
-                                final points = double.tryParse(value);
-                                if (points != null && widget.assignment.id != null) {
-                                  ref.read(scoreNotifierProvider.notifier).saveScoreForAssignment(
-                                    student.id!, widget.assignment.id!, points
-                                  );
-                                }
-                             }
-                          },
-                        ),
-                      )
-                    ),
-                  ],
+              // Create and cache controller per student
+              if (!_controllers.containsKey(student.id)) {
+                _controllers[student.id!] = TextEditingController(
+                  text: score != null ? score.pointsEarned.toString() : '',
                 );
-             },
+              }
+
+              // Sync controller when a score arrives from the provider
+              final controller = _controllers[student.id!]!;
+              if (score != null && controller.text.isEmpty) {
+                controller.text = score.pointsEarned.toString();
+              }
+
+              return GradebookStudentRow(
+                student: student,
+                score: score,
+                controller: controller,
+                assignment: widget.assignment,
+                onSave: (studentId, assignmentId, points) {
+                  ref.read(scoreNotifierProvider.notifier).saveScoreForAssignment(
+                    studentId, assignmentId, points,
+                  );
+                },
+              );
+            },
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),

@@ -24,12 +24,13 @@ class AssignmentNotifier extends AsyncNotifier<List<AssignmentModel>> {
     });
   }
 
-  Future<void> addAssignment(int classId, String name, String month, String year, double maxPoints) async {
+  Future<void> addAssignment(int classId, int subjectId, String name, String month, String year, double maxPoints) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final repository = ref.read(assignmentRepositoryProvider);
       final newAssignment = AssignmentModel(
         classId: classId,
+        subjectId: subjectId,
         name: name,
         month: month,
         year: year,
@@ -49,6 +50,16 @@ class AssignmentNotifier extends AsyncNotifier<List<AssignmentModel>> {
       final repository = ref.read(assignmentRepositoryProvider);
       await repository.delete(id);
       
+      return await repository.getByClassId(_currentClassId!);
+    });
+  }
+
+  Future<void> updateAssignment(AssignmentModel updated) async {
+    if (_currentClassId == null) return;
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      final repository = ref.read(assignmentRepositoryProvider);
+      await repository.update(updated);
       return await repository.getByClassId(_currentClassId!);
     });
   }

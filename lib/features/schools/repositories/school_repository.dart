@@ -12,8 +12,21 @@ class SchoolRepository {
 
   Future<List<SchoolModel>> getAll() async {
     Database db = await _dbHelper.database;
-    List<Map<String, dynamic>> maps = await db.query(DatabaseHelper.tableSchools);
+    List<Map<String, dynamic>> maps = await db.query(
+      DatabaseHelper.tableSchools,
+      orderBy: 'display_order DESC, created_at DESC',
+    );
     return maps.map((map) => SchoolModel.fromMap(map)).toList();
+  }
+
+  Future<void> updateDisplayOrder(int id, int displayOrder) async {
+    Database db = await _dbHelper.database;
+    await db.update(
+      DatabaseHelper.tableSchools,
+      {'display_order': displayOrder},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   Future<SchoolModel?> getById(int id) async {

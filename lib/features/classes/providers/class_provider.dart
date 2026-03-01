@@ -47,6 +47,21 @@ class ClassNotifier extends AsyncNotifier<List<ClassModel>> {
       return await repository.getClassesBySchoolId(_currentSchoolId!);
     });
   }
+
+  Future<void> updateClass(int id, String name, String academicYear) async {
+    if (_currentSchoolId == null) return;
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      final repository = ref.read(classRepositoryProvider);
+      await repository.update(ClassModel(
+        id: id,
+        schoolId: _currentSchoolId!,
+        name: name,
+        academicYear: academicYear,
+      ));
+      return await repository.getClassesBySchoolId(_currentSchoolId!);
+    });
+  }
 }
 
 final classNotifierProvider = AsyncNotifierProvider<ClassNotifier, List<ClassModel>>(() {

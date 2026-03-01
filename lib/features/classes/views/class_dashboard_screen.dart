@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/class_provider.dart';
-import '../../assignments/views/class_assignments_screen.dart';
+import '../../workspace/views/class_workspace_screen.dart';
+import '../widgets/class_list_tile.dart';
+import '../widgets/add_class_dialog.dart';
 
 class ClassDashboardScreen extends ConsumerStatefulWidget {
   final int schoolId;
@@ -26,55 +28,10 @@ class _ClassDashboardScreenState extends ConsumerState<ClassDashboardScreen> {
     });
   }
 
-  void _showAddClassDialog(BuildContext context, WidgetRef ref) {
-    final nameController = TextEditingController();
-    final yearController = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Add New Class'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(labelText: 'Class Name (e.g., Math 101)'),
-                autofocus: true,
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: yearController,
-                decoration: const InputDecoration(labelText: 'Academic Year (e.g., 2023-2024)'),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final name = nameController.text.trim();
-                final year = yearController.text.trim();
-                
-                if (name.isNotEmpty && year.isNotEmpty) {
-                  ref.read(classNotifierProvider.notifier).addClass(widget.schoolId, name, year);
-                  Navigator.of(context).pop();
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please fill out all fields')),
-                  );
-                }
-              },
-              child: const Text('Add'),
-            ),
-          ],
-        );
-      },
-    );
+  void _showAddClassDialog(BuildContext context) {
+    AddClassDialog.show(context, (name, year) {
+      ref.read(classNotifierProvider.notifier).addClass(widget.schoolId, name, year);
+    });
   }
 
   @override
@@ -102,42 +59,26 @@ class _ClassDashboardScreenState extends ConsumerState<ClassDashboardScreen> {
             itemCount: classes.length,
             itemBuilder: (context, index) {
               final model = classes[index];
-              return Card(
-                elevation: 2,
-                margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.all(16),
-                  leading: const CircleAvatar(
-                    child: Icon(Icons.class_),
-                  ),
-                  title: Text(
-                    model.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Text('Academic Year: ${model.academicYear}'),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () {
-                      if (model.id != null) {
-                        ref.read(classNotifierProvider.notifier).deleteClass(model.id!);
-                      }
-                    },
-                  ),
-                  onTap: () {
-                    if (model.id != null) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ClassAssignmentsScreen(
-                            classId: model.id!,
-                            className: model.name,
-                          ),
+              return ClassListTile(
+                model: model,
+                onDelete: () {
+                  if (model.id != null) {
+                    ref.read(classNotifierProvider.notifier).deleteClass(model.id!);
+                  }
+                },
+                onTap: () {
+                  if (model.id != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ClassWorkspaceScreen(
+                          classId: model.id!,
+                          className: model.name,
                         ),
-                      );
-                    }
-                  },
-                ),
+                      ),
+                    );
+                  }
+                },
               );
             },
           );
@@ -148,7 +89,7 @@ class _ClassDashboardScreenState extends ConsumerState<ClassDashboardScreen> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddClassDialog(context, ref),
+        onPressed: () => _showAddClassDialog(context),
         child: const Icon(Icons.add),
         tooltip: 'Add Class',
       ),
