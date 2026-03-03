@@ -11,8 +11,7 @@ class StudentListTileWidget extends ConsumerWidget {
   final StudentModel student;
   final VoidCallback? onDelete;
 
-  const StudentListTileWidget({Key? key, required this.student, this.onDelete})
-    : super(key: key);
+  const StudentListTileWidget({super.key, required this.student, this.onDelete});
 
   void _showEditDialog(BuildContext context, WidgetRef ref) async {
     final result = await showDialog<Map<String, dynamic>>(
@@ -92,7 +91,7 @@ class StudentListTileWidget extends ConsumerWidget {
         borderRadius: BorderRadius.circular(AppSizes.radiusMd),
         onTap: () => _openDetails(context),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
           child: ListTile(
             leading: CircleAvatar(
               radius: 24,
@@ -102,7 +101,7 @@ class StudentListTileWidget extends ConsumerWidget {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
                 ),
               ),
             ),
@@ -116,8 +115,9 @@ class StudentListTileWidget extends ConsumerWidget {
                 if (value == 'details') _openDetails(context);
                 if (value == 'profile') _openProfile(context);
                 if (value == 'edit') _showEditDialog(context, ref);
-                if (value == 'remove' && onDelete != null)
+                if (value == 'remove' && onDelete != null) {
                   _showDeleteDialog(context);
+                }
               },
               itemBuilder: (context) => [
                 PopupMenuItem<String>(

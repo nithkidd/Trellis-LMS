@@ -10,8 +10,7 @@ import '../widgets/gradebook_student_row.dart';
 class GradebookGridScreen extends ConsumerStatefulWidget {
   final AssignmentModel assignment;
 
-  const GradebookGridScreen({Key? key, required this.assignment})
-    : super(key: key);
+  const GradebookGridScreen({super.key, required this.assignment});
 
   @override
   ConsumerState<GradebookGridScreen> createState() =>

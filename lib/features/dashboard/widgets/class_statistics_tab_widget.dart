@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 class ClassStatisticsTabWidget extends StatelessWidget {
   final int classId;
 
-  const ClassStatisticsTabWidget({Key? key, required this.classId})
-    : super(key: key);
+  const ClassStatisticsTabWidget({super.key, required this.classId});
 
   @override
   Widget build(BuildContext context) {

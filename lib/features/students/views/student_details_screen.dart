@@ -10,8 +10,7 @@ import '../../../core/theme/app_theme.dart';
 class StudentDetailsScreen extends ConsumerWidget {
   final StudentModel student;
 
-  const StudentDetailsScreen({Key? key, required this.student})
-    : super(key: key);
+  const StudentDetailsScreen({super.key, required this.student});
 
   String _formatDate(String? isoDate) {
     if (isoDate == null || isoDate.isEmpty) return 'មិនទាន់កំណត់';
@@ -106,8 +105,8 @@ class StudentDetailsScreen extends ConsumerWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    AppColors.primary,
-                    AppColors.primary.withOpacity(0.8),
+                    Theme.of(context).colorScheme.primary,
+                    Theme.of(context).colorScheme.primary.withValues(alpha: 0.8),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -229,7 +228,7 @@ class StudentDetailsScreen extends ConsumerWidget {
               ),
               child: Icon(
                 icon,
-                color: Theme.of(context).colorScheme.primary,
+                color: Theme.of(context).colorScheme.onPrimaryContainer,
                 size: 24,
               ),
             ),

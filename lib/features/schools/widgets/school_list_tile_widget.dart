@@ -80,7 +80,7 @@ class SchoolListTileWidget extends ConsumerWidget {
 
     return Card(
       elevation: 2,
-      shadowColor: primary.withOpacity(0.12),
+      shadowColor: primary.withValues(alpha: 0.12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppSizes.radiusLg),
       ),
@@ -125,7 +125,7 @@ class SchoolListTileWidget extends ConsumerWidget {
                         width: 32,
                         height: 32,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(

@@ -46,7 +46,7 @@ class MyApp extends ConsumerWidget {
 }
 
 class _SplashWrapper extends StatefulWidget {
-  const _SplashWrapper({Key? key}) : super(key: key);
+  const _SplashWrapper();
 
   @override
   State<_SplashWrapper> createState() => _SplashWrapperState();

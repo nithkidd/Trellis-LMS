@@ -13,13 +13,13 @@ class GradebookStudentRow extends StatefulWidget {
   final void Function(int studentId, int assignmentId, double points) onSave;
 
   const GradebookStudentRow({
-    Key? key,
+    super.key,
     required this.student,
     required this.score,
     required this.controller,
     required this.assignment,
     required this.onSave,
-  }) : super(key: key);
+  });
 
   @override
   State<GradebookStudentRow> createState() => _GradebookStudentRowState();
@@ -108,7 +108,7 @@ class _GradebookStudentRowState extends State<GradebookStudentRow> {
                 hintText: '---',
                 filled: true,
                 fillColor: hasSavedScore
-                    ? AppColors.success.withOpacity(0.06)
+                    ? AppColors.success.withValues(alpha: 0.06)
                     : AppColors.background,
                 suffixText: '/ ${widget.assignment.maxPoints.toInt()}',
                 border: OutlineInputBorder(

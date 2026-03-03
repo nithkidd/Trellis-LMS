@@ -10,53 +10,78 @@ class ClassListTile extends ConsumerWidget {
   final VoidCallback onTap;
 
   const ClassListTile({
-    Key? key,
+    super.key,
     required this.model,
     required this.onDelete,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   void _showEditDialog(BuildContext context, WidgetRef ref) {
     final nameCtrl = TextEditingController(text: model.name);
     final yearCtrl = TextEditingController(text: model.academicYear);
+    bool isAdviser = model.isAdviser;
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('កែប្រែថ្នាក់'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameCtrl,
-              decoration: const InputDecoration(labelText: 'ឈ្មោះថ្នាក់'),
-              autofocus: true,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('កែប្រែថ្នាក់'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameCtrl,
+                  decoration: const InputDecoration(labelText: 'ឈ្មោះថ្នាក់'),
+                  autofocus: true,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: yearCtrl,
+                  decoration: const InputDecoration(labelText: 'ឆ្នាំសិក្សា'),
+                ),
+                const SizedBox(height: 12),
+                CheckboxListTile(
+                  title: const Text('ខ្ញុំជាគ្រូបន្ទុកថ្នាក់នេះ'),
+                  value: isAdviser,
+                  onChanged: (val) {
+                    setState(() {
+                      isAdviser = val ?? false;
+                    });
+                  },
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: yearCtrl,
-              decoration: const InputDecoration(labelText: 'ឆ្នាំសិក្សា'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('បោះបង់'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final name = nameCtrl.text.trim();
-              final year = yearCtrl.text.trim();
-              if (name.isNotEmpty && year.isNotEmpty && model.id != null) {
-                ref
-                    .read(classNotifierProvider.notifier)
-                    .updateClass(model.id!, name, year);
-                Navigator.pop(ctx);
-              }
-            },
-            child: const Text('រក្សាទុក'),
-          ),
-        ],
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('បោះបង់'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  final name = nameCtrl.text.trim();
+                  final year = yearCtrl.text.trim();
+                  if (name.isNotEmpty && year.isNotEmpty && model.id != null) {
+                    // Update the complete ClassModel with new states
+                    ref
+                        .read(classNotifierProvider.notifier)
+                        .updateClassDetailed(
+                          ClassModel(
+                            id: model.id,
+                            schoolId: model.schoolId,
+                            name: name,
+                            academicYear: year,
+                            isAdviser: isAdviser,
+                          ),
+                        );
+                    Navigator.pop(ctx);
+                  }
+                },
+                child: const Text('រក្សាទុក'),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -99,14 +124,48 @@ class ClassListTile extends ConsumerWidget {
             horizontal: AppSizes.paddingMd,
             vertical: AppSizes.paddingSm,
           ),
-          leading: const CircleAvatar(
-            backgroundColor: AppColors.primaryLight,
-            child: Icon(Icons.class_, color: AppColors.primary),
+          leading: CircleAvatar(
+            backgroundColor: Theme.of(
+              context,
+            ).primaryColor.withValues(alpha: 0.1),
+            child: Icon(Icons.class_, color: Theme.of(context).primaryColor),
           ),
-          title: Text(model.name, style: AppTextStyles.subheading),
-          subtitle: Text(
-            'ឆ្នាំសិក្សា៖ ${model.academicYear}',
-            style: AppTextStyles.caption,
+          title: Row(
+            children: [
+              Expanded(
+                child: Text(model.name, style: AppTextStyles.subheading),
+              ),
+              if (model.isAdviser)
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    'គ្រូបន្ទុកថ្នាក់',
+                    style: AppTextStyles.caption.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          subtitle: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'ឆ្នាំសិក្សា៖ ${model.academicYear}',
+                  style: AppTextStyles.caption,
+                ),
+              ],
+            ),
           ),
           trailing: PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),

@@ -38,8 +38,7 @@ const Map<String, String> kMonthLabels = {
 class AssignmentsTabWidget extends ConsumerStatefulWidget {
   final int classId;
 
-  const AssignmentsTabWidget({Key? key, required this.classId})
-    : super(key: key);
+  const AssignmentsTabWidget({super.key, required this.classId});
 
   @override
   ConsumerState<AssignmentsTabWidget> createState() =>
@@ -95,7 +94,7 @@ class _AssignmentsTabWidgetState extends ConsumerState<AssignmentsTabWidget> {
                       )
                     else
                       DropdownButtonFormField<int>(
-                        value: selectedSubjectId,
+                        initialValue: selectedSubjectId,
                         decoration: const InputDecoration(
                           labelText: 'មុខវិជ្ជា',
                         ),
@@ -133,7 +132,7 @@ class _AssignmentsTabWidgetState extends ConsumerState<AssignmentsTabWidget> {
                       children: [
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            value: selectedMonth,
+                            initialValue: selectedMonth,
                             decoration: const InputDecoration(labelText: 'ខែ'),
                             items: kMonths
                                 .map(
@@ -150,7 +149,7 @@ class _AssignmentsTabWidgetState extends ConsumerState<AssignmentsTabWidget> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            value: selectedYear,
+                            initialValue: selectedYear,
                             decoration: const InputDecoration(
                               labelText: 'ឆ្នាំ',
                             ),

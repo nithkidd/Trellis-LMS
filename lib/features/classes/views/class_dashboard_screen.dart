@@ -10,10 +10,10 @@ class ClassDashboardScreen extends ConsumerStatefulWidget {
   final String schoolName;
 
   const ClassDashboardScreen({
-    Key? key,
+    super.key,
     required this.schoolId,
     required this.schoolName,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<ClassDashboardScreen> createState() =>
@@ -85,6 +85,7 @@ class _ClassDashboardScreenState extends ConsumerState<ClassDashboardScreen> {
                         builder: (context) => ClassWorkspaceScreen(
                           classId: model.id!,
                           className: model.name,
+                          isAdviser: model.isAdviser,
                         ),
                       ),
                     );

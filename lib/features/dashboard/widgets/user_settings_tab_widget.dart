@@ -5,7 +5,7 @@ import '../../../core/theme/app_theme_color.dart';
 import '../../../core/theme/theme_provider.dart';
 
 class UserSettingsTabWidget extends ConsumerWidget {
-  const UserSettingsTabWidget({Key? key}) : super(key: key);
+  const UserSettingsTabWidget({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -43,7 +43,7 @@ class UserSettingsTabWidget extends ConsumerWidget {
                           decoration: BoxDecoration(
                             color: Theme.of(
                               context,
-                            ).primaryColor.withOpacity(0.1),
+                            ).primaryColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
@@ -113,7 +113,7 @@ class UserSettingsTabWidget extends ConsumerWidget {
                           decoration: BoxDecoration(
                             color: Theme.of(
                               context,
-                            ).primaryColor.withOpacity(0.1),
+                            ).primaryColor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
@@ -210,7 +210,7 @@ class _ThemeColorOption extends StatelessWidget {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: primaryColor.withOpacity(0.3),
+                    color: primaryColor.withValues(alpha: 0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),

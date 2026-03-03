@@ -8,7 +8,7 @@ import '../../../core/theme/app_theme.dart';
 class RosterTabWidget extends ConsumerStatefulWidget {
   final int classId;
 
-  const RosterTabWidget({Key? key, required this.classId}) : super(key: key);
+  const RosterTabWidget({super.key, required this.classId});
 
   @override
   ConsumerState<RosterTabWidget> createState() => RosterTabWidgetState();
@@ -79,7 +79,7 @@ class RosterTabWidgetState extends ConsumerState<RosterTabWidget> {
                   vertical: AppSizes.paddingSm,
                 ),
                 itemCount: students.length,
-                separatorBuilder: (_, __) =>
+                separatorBuilder: (_, _) =>
                     const SizedBox(height: AppSizes.paddingSm),
                 itemBuilder: (context, index) {
                   final student = students[index];

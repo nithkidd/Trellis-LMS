@@ -1,6 +1,5 @@
 import 'package:sqflite/sqflite.dart';
 import '../../../core/database/database_helper.dart';
-import '../../../core/utils/khmer_collator.dart';
 import '../models/subject_model.dart';
 
 class SubjectRepository {
@@ -8,7 +7,26 @@ class SubjectRepository {
 
   Future<int> insert(SubjectModel subject) async {
     Database db = await _dbHelper.database;
-    return await db.insert(DatabaseHelper.tableSubjects, subject.toMap());
+
+    int? nextOrder = subject.displayOrder;
+    if (nextOrder == null) {
+      final maxOrderResult = await db.rawQuery(
+        '''
+        SELECT COALESCE(MAX(display_order), -1) AS max_order
+        FROM ${DatabaseHelper.tableSubjects}
+        WHERE class_id = ?
+        ''',
+        [subject.classId],
+      );
+      final maxOrder =
+          (maxOrderResult.first['max_order'] as num?)?.toInt() ?? -1;
+      nextOrder = maxOrder + 1;
+    }
+
+    return await db.insert(
+      DatabaseHelper.tableSubjects,
+      subject.copyWith(displayOrder: nextOrder).toMap(),
+    );
   }
 
   Future<List<SubjectModel>> getByClassId(int classId) async {
@@ -17,15 +35,9 @@ class SubjectRepository {
       DatabaseHelper.tableSubjects,
       where: 'class_id = ?',
       whereArgs: [classId],
+      orderBy: 'display_order ASC, id ASC',
     );
-    List<SubjectModel> subjects = maps
-        .map((map) => SubjectModel.fromMap(map))
-        .toList();
-
-    // Sort by Khmer alphabetical order
-    KhmerCollator.sortBy(subjects, (s) => s.name);
-
-    return subjects;
+    return maps.map((map) => SubjectModel.fromMap(map)).toList();
   }
 
   Future<SubjectModel?> getById(int id) async {
@@ -58,5 +70,25 @@ class SubjectRepository {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  Future<void> reorderSubjects({
+    required int classId,
+    required List<SubjectModel> orderedSubjects,
+  }) async {
+    Database db = await _dbHelper.database;
+    await db.transaction((txn) async {
+      for (int index = 0; index < orderedSubjects.length; index++) {
+        final subjectId = orderedSubjects[index].id;
+        if (subjectId == null) continue;
+
+        await txn.update(
+          DatabaseHelper.tableSubjects,
+          {'display_order': index},
+          where: 'id = ? AND class_id = ?',
+          whereArgs: [subjectId, classId],
+        );
+      }
+    });
   }
 }

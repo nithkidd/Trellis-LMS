@@ -1,18 +1,19 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
 class DatabaseHelper {
   static const _databaseName = "TeacherLMS.db";
-  static const _databaseVersion = 8;
+  static const _databaseVersion = 10;
 
   // Table Names
   static const tableSchools = 'schools';
   static const tableClasses = 'classes';
   static const tableSubjects = 'subjects';
+  static const tableTeachers = 'teachers';
+  static const tableClassTeacherSubject = 'class_teacher_subject';
   static const tableStudents = 'students';
   static const tableAssignments = 'assignments';
   static const tableScores = 'scores';
@@ -83,6 +84,61 @@ class DatabaseHelper {
         'ALTER TABLE $tableClasses ADD COLUMN is_adviser INTEGER DEFAULT 0',
       );
     }
+    if (oldVersion < 9) {
+      // Create teachers and class_teacher_subject tables for v9
+      await db.execute('''
+        CREATE TABLE $tableTeachers (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          school_id INTEGER NOT NULL,
+          name TEXT NOT NULL,
+          created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (school_id) REFERENCES $tableSchools (id) ON DELETE CASCADE
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE $tableClassTeacherSubject (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          class_id INTEGER NOT NULL,
+          teacher_id INTEGER NOT NULL,
+          subject_id INTEGER NOT NULL,
+          FOREIGN KEY (class_id) REFERENCES $tableClasses (id) ON DELETE CASCADE,
+          FOREIGN KEY (teacher_id) REFERENCES $tableTeachers (id) ON DELETE CASCADE,
+          FOREIGN KEY (subject_id) REFERENCES $tableSubjects (id) ON DELETE CASCADE,
+          UNIQUE(class_id, teacher_id, subject_id)
+        )
+      ''');
+    }
+    if (oldVersion < 10) {
+      await db.execute(
+        'ALTER TABLE $tableSubjects ADD COLUMN display_order INTEGER DEFAULT 0',
+      );
+
+      // Backfill existing records in deterministic order.
+      final subjects = await db.query(
+        tableSubjects,
+        columns: ['id', 'class_id'],
+        orderBy: 'class_id ASC, id ASC',
+      );
+
+      int? currentClassId;
+      int order = 0;
+      for (final row in subjects) {
+        final classId = row['class_id'] as int;
+        if (currentClassId != classId) {
+          currentClassId = classId;
+          order = 0;
+        }
+
+        await db.update(
+          tableSubjects,
+          {'display_order': order},
+          where: 'id = ?',
+          whereArgs: [row['id']],
+        );
+        order++;
+      }
+    }
   }
 
   Future _createTables(Database db) async {
@@ -114,7 +170,33 @@ class DatabaseHelper {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         class_id INTEGER NOT NULL,
         name TEXT NOT NULL,
+        display_order INTEGER DEFAULT 0,
         FOREIGN KEY (class_id) REFERENCES $tableClasses (id) ON DELETE CASCADE
+      )
+    ''');
+
+    // Teachers Table
+    await db.execute('''
+      CREATE TABLE $tableTeachers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        school_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (school_id) REFERENCES $tableSchools (id) ON DELETE CASCADE
+      )
+    ''');
+
+    // Class-Teacher-Subject Assignment Table
+    await db.execute('''
+      CREATE TABLE $tableClassTeacherSubject (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        class_id INTEGER NOT NULL,
+        teacher_id INTEGER NOT NULL,
+        subject_id INTEGER NOT NULL,
+        FOREIGN KEY (class_id) REFERENCES $tableClasses (id) ON DELETE CASCADE,
+        FOREIGN KEY (teacher_id) REFERENCES $tableTeachers (id) ON DELETE CASCADE,
+        FOREIGN KEY (subject_id) REFERENCES $tableSubjects (id) ON DELETE CASCADE,
+        UNIQUE(class_id, teacher_id, subject_id)
       )
     ''');
 

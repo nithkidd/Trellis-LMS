@@ -6,7 +6,7 @@ import '../../dashboard/widgets/user_settings_tab_widget.dart';
 import '../widgets/dashboard_bottom_nav_bar.dart';
 
 class MainDashboardScreen extends StatefulWidget {
-  const MainDashboardScreen({Key? key}) : super(key: key);
+  const MainDashboardScreen({super.key});
 
   @override
   State<MainDashboardScreen> createState() => _MainDashboardScreenState();

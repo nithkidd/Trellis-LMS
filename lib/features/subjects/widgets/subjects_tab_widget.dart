@@ -7,13 +7,15 @@ import '../../../core/theme/app_theme.dart';
 class SubjectsTabWidget extends ConsumerStatefulWidget {
   final int classId;
 
-  const SubjectsTabWidget({Key? key, required this.classId}) : super(key: key);
+  const SubjectsTabWidget({super.key, required this.classId});
 
   @override
   ConsumerState<SubjectsTabWidget> createState() => _SubjectsTabWidgetState();
 }
 
 class _SubjectsTabWidgetState extends ConsumerState<SubjectsTabWidget> {
+  bool _isReordering = false;
+
   @override
   void initState() {
     super.initState();
@@ -22,6 +24,30 @@ class _SubjectsTabWidgetState extends ConsumerState<SubjectsTabWidget> {
           .read(subjectNotifierProvider.notifier)
           .loadSubjectsForClass(widget.classId);
     });
+  }
+
+  Future<void> _reorderSubjects(
+    List<SubjectModel> subjects,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    setState(() => _isReordering = true);
+    try {
+      final reordered = List<SubjectModel>.from(subjects);
+      if (newIndex > oldIndex) {
+        newIndex -= 1;
+      }
+      final moved = reordered.removeAt(oldIndex);
+      reordered.insert(newIndex, moved);
+
+      await ref
+          .read(subjectNotifierProvider.notifier)
+          .reorderSubjects(widget.classId, reordered);
+    } finally {
+      if (mounted) {
+        setState(() => _isReordering = false);
+      }
+    }
   }
 
   void _showAddSubjectDialog(BuildContext context) {
@@ -117,68 +143,129 @@ class _SubjectsTabWidgetState extends ConsumerState<SubjectsTabWidget> {
             );
           }
 
-          return ListView.separated(
-            padding: const EdgeInsets.all(AppSizes.paddingMd),
-            itemCount: subjects.length,
-            separatorBuilder: (_, __) => const Divider(),
-            itemBuilder: (context, index) {
-              final subject = subjects[index];
-              return ListTile(
-                title: Text(subject.name, style: AppTextStyles.subheading),
-                trailing: PopupMenuButton<String>(
-                  icon: const Icon(
-                    Icons.more_vert,
-                    color: AppColors.textSecondary,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-                  ),
-                  onSelected: (value) {
-                    if (value == 'edit') {
-                      _showEditSubjectDialog(context, subject);
-                    }
-                    if (value == 'remove' && subject.id != null) {
-                      ref
-                          .read(subjectNotifierProvider.notifier)
-                          .deleteSubject(subject.id!, widget.classId);
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    PopupMenuItem<String>(
-                      value: 'edit',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.edit_outlined,
-                            color: Theme.of(context).colorScheme.primary,
-                            size: AppSizes.iconMd,
-                          ),
-                          const SizedBox(width: 8),
-                          const Text('កែប្រែ'),
-                        ],
-                      ),
+          return Column(
+            children: [
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.fromLTRB(
+                  AppSizes.paddingMd,
+                  AppSizes.paddingMd,
+                  AppSizes.paddingMd,
+                  AppSizes.paddingSm,
+                ),
+                padding: const EdgeInsets.all(AppSizes.paddingSm),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.drag_indicator,
+                      size: AppSizes.iconSm,
+                      color: AppColors.textSecondary,
                     ),
-                    const PopupMenuItem<String>(
-                      value: 'remove',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.delete_outline,
-                            color: AppColors.danger,
-                            size: AppSizes.iconMd,
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            'លុប',
-                            style: TextStyle(color: AppColors.danger),
-                          ),
-                        ],
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _isReordering
+                            ? 'កំពុងរក្សាទុកលំដាប់មុខវិជ្ជា...'
+                            : 'អូសដើម្បីប្ដូរលំដាប់មុខវិជ្ជា',
+                        style: AppTextStyles.caption,
                       ),
                     ),
                   ],
                 ),
-              );
-            },
+              ),
+              Expanded(
+                child: ReorderableListView.builder(
+                  buildDefaultDragHandles: false,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.paddingMd,
+                    vertical: AppSizes.paddingSm,
+                  ),
+                  itemCount: subjects.length,
+                  onReorder: (oldIndex, newIndex) =>
+                      _reorderSubjects(subjects, oldIndex, newIndex),
+                  itemBuilder: (context, index) {
+                    final subject = subjects[index];
+                    return Card(
+                      key: ValueKey(subject.id ?? '${subject.name}_$index'),
+                      margin: const EdgeInsets.only(bottom: AppSizes.paddingSm),
+                      child: ListTile(
+                        title: Text(
+                          subject.name,
+                          style: AppTextStyles.subheading,
+                        ),
+                        leading: ReorderableDragStartListener(
+                          index: index,
+                          child: const Icon(
+                            Icons.drag_handle,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        trailing: PopupMenuButton<String>(
+                          icon: const Icon(
+                            Icons.more_vert,
+                            color: AppColors.textSecondary,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              AppSizes.radiusMd,
+                            ),
+                          ),
+                          onSelected: (value) {
+                            if (value == 'edit') {
+                              _showEditSubjectDialog(context, subject);
+                            }
+                            if (value == 'remove' && subject.id != null) {
+                              ref
+                                  .read(subjectNotifierProvider.notifier)
+                                  .deleteSubject(subject.id!, widget.classId);
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            PopupMenuItem<String>(
+                              value: 'edit',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.edit_outlined,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                    size: AppSizes.iconMd,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text('កែប្រែ'),
+                                ],
+                              ),
+                            ),
+                            const PopupMenuItem<String>(
+                              value: 'remove',
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.delete_outline,
+                                    color: AppColors.danger,
+                                    size: AppSizes.iconMd,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'លុប',
+                                    style: TextStyle(color: AppColors.danger),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),

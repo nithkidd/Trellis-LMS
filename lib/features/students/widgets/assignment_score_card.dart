@@ -19,8 +19,7 @@ const Map<String, String> kMonthLabels = {
 class AssignmentScoreCard extends StatelessWidget {
   final StudentProfileScore profileScore;
 
-  const AssignmentScoreCard({Key? key, required this.profileScore})
-    : super(key: key);
+  const AssignmentScoreCard({super.key, required this.profileScore});
 
   Color _getGradeColor(double percentage, BuildContext context) {
     if (percentage >= 90) return Colors.green.shade700;
@@ -57,7 +56,7 @@ class AssignmentScoreCard extends StatelessWidget {
           trailing: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: _getGradeColor(percentage, context).withOpacity(0.1),
+              color: _getGradeColor(percentage, context).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(

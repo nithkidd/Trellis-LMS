@@ -6,8 +6,7 @@ class StudentFormDialog extends StatefulWidget {
   final StudentModel? student; // null means adding new student
   final int classId;
 
-  const StudentFormDialog({Key? key, this.student, required this.classId})
-    : super(key: key);
+  const StudentFormDialog({super.key, this.student, required this.classId});
 
   @override
   State<StudentFormDialog> createState() => _StudentFormDialogState();
@@ -129,7 +128,7 @@ class _StudentFormDialogState extends State<StudentFormDialog> {
 
                   // Sex dropdown
                   DropdownButtonFormField<String>(
-                    value: _sex,
+                    initialValue: _sex,
                     decoration: const InputDecoration(
                       labelText: 'ភេទ',
                       border: OutlineInputBorder(),

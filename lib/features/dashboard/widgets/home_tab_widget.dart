@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 
 class HomeTabWidget extends StatelessWidget {
-  const HomeTabWidget({Key? key}) : super(key: key);
+  const HomeTabWidget({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -2,15 +2,15 @@
 # Run: flutter pub run flutter_launcher_icons
 
 flutter_launcher_icons:
-  image_path: "assets/trellis_logo.svg"
-  image_path_ios: "assets/trellis_logo.svg"
+  image_path: "assets/trellis-logo.png"
+  image_path_ios: "assets/trellis-logo.png"
 
   android: true
   ios: true
 
   # Android
   android_adaptive_icon_background: "#ffffff"
-  android_adaptive_icon_foreground: "assets/trellis_logo.svg"
+  android_adaptive_icon_foreground: "assets/trellis-logo.png"
 
   # iOS
   ios_settings:

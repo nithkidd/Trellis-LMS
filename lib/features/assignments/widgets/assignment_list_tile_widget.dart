@@ -39,10 +39,10 @@ class AssignmentListTileWidget extends ConsumerWidget {
   final VoidCallback? onDelete;
 
   const AssignmentListTileWidget({
-    Key? key,
+    super.key,
     required this.assignment,
     this.onDelete,
-  }) : super(key: key);
+  });
 
   void _openGradebook(BuildContext context) {
     if (assignment.id != null) {
@@ -92,7 +92,7 @@ class AssignmentListTileWidget extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: selectedMonth,
+                        initialValue: selectedMonth,
                         decoration: const InputDecoration(labelText: 'ខែ'),
                         items: kMonths
                             .map(
@@ -109,7 +109,7 @@ class AssignmentListTileWidget extends ConsumerWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: selectedYear,
+                        initialValue: selectedYear,
                         decoration: const InputDecoration(labelText: 'ឆ្នាំ'),
                         items: ['2023', '2024', '2025', '2026']
                             .map(
@@ -197,9 +197,9 @@ class AssignmentListTileWidget extends ConsumerWidget {
             horizontal: AppSizes.paddingMd,
             vertical: AppSizes.paddingSm,
           ),
-          leading: const CircleAvatar(
-            backgroundColor: AppColors.primaryLight,
-            child: Icon(Icons.assignment, color: AppColors.primary),
+          leading: CircleAvatar(
+            backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+            child: Icon(Icons.assignment, color: Theme.of(context).colorScheme.primary),
           ),
           title: Text(assignment.name, style: AppTextStyles.subheading),
           subtitle: Padding(
@@ -217,8 +217,9 @@ class AssignmentListTileWidget extends ConsumerWidget {
             onSelected: (value) {
               if (value == 'open') _openGradebook(context);
               if (value == 'edit') _showEditDialog(context, ref);
-              if (value == 'remove' && onDelete != null)
+              if (value == 'remove' && onDelete != null) {
                 _showDeleteDialog(context);
+              }
             },
             itemBuilder: (context) => [
               const PopupMenuItem<String>(

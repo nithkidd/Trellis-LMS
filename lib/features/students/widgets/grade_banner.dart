@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 class GradeBanner extends StatelessWidget {
   final double average;
 
-  const GradeBanner({Key? key, required this.average}) : super(key: key);
+  const GradeBanner({super.key, required this.average});
 
   Color _getGradeColor(BuildContext context) {
-    if (average >= 90) return Colors.green.shade700;
-    if (average >= 80) return Colors.blue.shade700;
-    if (average >= 70) return Colors.orange.shade700;
-    if (average > 0) return Colors.red.shade700;
+    // if (average >= 90) return Colors.green.shade700;
+    // if (average >= 80) return Colors.blue.shade700;
+    // if (average >= 70) return Colors.orange.shade700;
+    // if (average > 0) return Colors.red.shade700;
     return Theme.of(context).colorScheme.onPrimaryContainer;
   }
 
@@ -23,7 +23,7 @@ class GradeBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -33,7 +33,7 @@ class GradeBanner extends StatelessWidget {
         children: [
           const Text(
             'ពិន្ទុសរុប',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Colors.white),
           ),
           const SizedBox(height: 8),
           Text(

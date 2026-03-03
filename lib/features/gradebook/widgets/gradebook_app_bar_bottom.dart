@@ -22,11 +22,11 @@ class GradebookAppBarBottom extends StatelessWidget
   final double maxPoints;
 
   const GradebookAppBarBottom({
-    Key? key,
+    super.key,
     required this.month,
     required this.year,
     required this.maxPoints,
-  }) : super(key: key);
+  });
 
   @override
   Size get preferredSize => const Size.fromHeight(40);

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class GlobalStatisticsTabWidget extends StatelessWidget {
-  const GlobalStatisticsTabWidget({Key? key}) : super(key: key);
+  const GlobalStatisticsTabWidget({super.key});
 
   @override
   Widget build(BuildContext context) {

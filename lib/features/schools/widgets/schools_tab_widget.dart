@@ -5,7 +5,7 @@ import 'school_list_tile_widget.dart';
 import '../../../core/theme/app_theme.dart';
 
 class SchoolsTabWidget extends ConsumerStatefulWidget {
-  const SchoolsTabWidget({Key? key}) : super(key: key);
+  const SchoolsTabWidget({super.key});
 
   @override
   ConsumerState<SchoolsTabWidget> createState() => _SchoolsTabWidgetState();
@@ -340,8 +340,8 @@ class _SchoolsTabWidgetState extends ConsumerState<SchoolsTabWidget> {
                                 ),
                                 Icon(
                                   Icons.drag_handle,
-                                  color: AppColors.textSecondary.withOpacity(
-                                    0.5,
+                                  color: AppColors.textSecondary.withValues(
+                                    alpha: 0.5,
                                   ),
                                 ),
                               ],
@@ -369,7 +369,7 @@ class _SchoolsTabWidgetState extends ConsumerState<SchoolsTabWidget> {
                     vertical: AppSizes.paddingSm,
                   ),
                   itemCount: filteredSchools.length,
-                  separatorBuilder: (_, __) =>
+                  separatorBuilder: (_, _) =>
                       const SizedBox(height: AppSizes.paddingMd),
                   itemBuilder: (context, index) {
                     final school = filteredSchools[index];

@@ -1,4 +1,4 @@
-package com.example.lms
+package com.example.trellis
 
 import io.flutter.embedding.android.FlutterActivity
 

@@ -9,10 +9,10 @@ class StudentProfileScreen extends ConsumerStatefulWidget {
   final String studentName;
 
   const StudentProfileScreen({
-    Key? key,
+    super.key,
     required this.studentId,
     required this.studentName,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<StudentProfileScreen> createState() =>
