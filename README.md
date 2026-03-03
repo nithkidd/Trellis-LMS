@@ -5,7 +5,7 @@ It helps schools manage school structures, classes, teachers, students, subjects
 
 ## What the App Does
 
-Trellis focuses on practical workflows used by schools:
+Trellis focuses on practical workflows used by teachers:
 
 - Organize multiple schools and their academic data
 - Manage classes, teachers, students, and subjects
