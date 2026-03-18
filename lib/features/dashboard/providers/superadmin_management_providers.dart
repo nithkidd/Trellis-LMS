@@ -84,19 +84,26 @@ class SuperadminSchoolsNotifier extends AsyncNotifier<List<SchoolModel>> {
     state = await AsyncValue.guard(_load);
   }
 
-  Future<void> createSchool({required String name}) async {
+  Future<void> createSchool({
+    required String organizationId,
+    required String name,
+  }) async {
     await ref
         .read(superadminManagementRepositoryProvider)
-        .createSchool(name: name);
+        .createSchool(organizationId: organizationId, name: name);
     await refresh();
     ref.invalidate(superadminDirectoryLookupsProvider);
     ref.invalidate(superadminDashboardSummaryProvider);
   }
 
-  Future<void> updateSchool({required String id, required String name}) async {
+  Future<void> updateSchool({
+    required String id,
+    required String organizationId,
+    required String name,
+  }) async {
     await ref
         .read(superadminManagementRepositoryProvider)
-        .updateSchool(id: id, name: name);
+        .updateSchool(id: id, organizationId: organizationId, name: name);
     await refresh();
     ref.invalidate(superadminDirectoryLookupsProvider);
     ref.invalidate(superadminDashboardSummaryProvider);
@@ -143,6 +150,25 @@ class SuperadminUserProfilesNotifier
     await ref
         .read(superadminManagementRepositoryProvider)
         .deleteUserProfile(uid);
+    await refresh();
+    ref.invalidate(superadminDashboardSummaryProvider);
+  }
+
+  Future<void> approveTeacherRequest({
+    required String uid,
+    required String teacherId,
+  }) async {
+    await ref
+        .read(superadminManagementRepositoryProvider)
+        .approveTeacherRequest(uid: uid, teacherId: teacherId);
+    await refresh();
+    ref.invalidate(superadminDashboardSummaryProvider);
+  }
+
+  Future<void> declineTeacherRequest(String uid) async {
+    await ref
+        .read(superadminManagementRepositoryProvider)
+        .declineTeacherRequest(uid);
     await refresh();
     ref.invalidate(superadminDashboardSummaryProvider);
   }
@@ -219,6 +245,16 @@ final superadminTeacherProfilesProvider =
       return profiles.whenData(
         (items) => items
             .where((profile) => profile.role == AppUserRole.teacher)
+            .toList(growable: false),
+      );
+    });
+
+final superadminPendingTeacherRequestsProvider =
+    Provider<AsyncValue<List<AppUserProfile>>>((ref) {
+      final profiles = ref.watch(superadminUserProfilesProvider);
+      return profiles.whenData(
+        (items) => items
+            .where((profile) => profile.isPendingApproval)
             .toList(growable: false),
       );
     });

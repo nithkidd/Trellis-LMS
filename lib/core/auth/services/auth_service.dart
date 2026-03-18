@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -10,6 +12,8 @@ class AuthService {
   AuthService({FirebaseAuth? firebaseAuth, FirebaseFirestore? firestore})
     : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance,
       _firestore = firestore ?? FirebaseFirestore.instance;
+
+  static const Duration _firestoreReadTimeout = Duration(seconds: 12);
 
   // Expected document shape:
   // user_profiles/{uid} => { email, displayName, role, isActive, organizationId?, teacherId? }
@@ -39,7 +43,8 @@ class AuthService {
     final snapshot = await _firestore
         .collection(organizationsCollection)
         .where('isActive', isEqualTo: true)
-        .get();
+        .get()
+        .timeout(_firestoreReadTimeout);
 
     final organizations =
         snapshot.docs
@@ -81,6 +86,7 @@ class AuthService {
         'isActive': false,
         'organizationId': organizationId.trim(),
         'teacherId': null,
+        'requestStatus': 'pending',
         'signupRequestedAt': FieldValue.serverTimestamp(),
         'createdAt': FieldValue.serverTimestamp(),
       });
@@ -109,7 +115,8 @@ class AuthService {
     final document = await _firestore
         .collection(userProfilesCollection)
         .doc(uid)
-        .get();
+        .get()
+        .timeout(_firestoreReadTimeout);
 
     if (!document.exists) {
       return null;

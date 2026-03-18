@@ -1,13 +1,11 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sqflite_common_ffi/sqflite_ffi.dart';
-import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
 import 'core/auth/views/auth_gate.dart';
-import 'core/database/database_helper.dart';
 import 'core/firebase/firebase_bootstrap.dart';
 import 'core/localization/app_localizations.dart';
 import 'core/localization/locale_controller.dart';
@@ -17,28 +15,11 @@ import 'splash_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  if (kIsWeb) {
-    databaseFactory = databaseFactoryFfiWeb;
-  } else {
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.windows:
-      case TargetPlatform.linux:
-      case TargetPlatform.macOS:
-        sqfliteFfiInit();
-        databaseFactory = databaseFactoryFfi;
-        break;
-      case TargetPlatform.android:
-      case TargetPlatform.iOS:
-      case TargetPlatform.fuchsia:
-        break;
-    }
-  }
-
   runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends ConsumerWidget {
-  const MyApp({super.key});
+  const MyApp({super.key}); 
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -93,8 +74,7 @@ class _SplashWrapperState extends State<_SplashWrapper> {
   Future<void> _prepareApp() async {
     await Future.wait<void>([
       _initializeFirebase(),
-      DatabaseHelper.instance.database,
-      Future<void>.delayed(const Duration(milliseconds: 1200)),
+      Future<void>.delayed(const Duration(milliseconds: 250)),
     ]);
   }
 

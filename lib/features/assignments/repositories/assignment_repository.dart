@@ -1,24 +1,24 @@
-import '../../../core/database/database_helper.dart';
+import '../../../core/database/operational_firestore_service.dart';
 import '../models/assignment_model.dart';
 
 class AssignmentRepository {
-  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+  AssignmentRepository({OperationalFirestoreService? store})
+    : _store = store ?? OperationalFirestoreService();
+
+  final OperationalFirestoreService _store;
 
   Future<String> insert(AssignmentModel assignment) async {
-    final db = await _dbHelper.database;
-    final id = await db.insert(
-      DatabaseHelper.tableAssignments,
-      assignment.toDto(),
+    return _store.createDocument(
+      collectionName: OperationalFirestoreService.assignmentsCollection,
+      data: assignment.toDto(),
     );
-    return id.toString();
   }
 
   Future<List<AssignmentModel>> getByClassId(String classId) async {
-    final db = await _dbHelper.database;
-    final rows = await db.query(
-      DatabaseHelper.tableAssignments,
-      where: 'class_id = ?',
-      whereArgs: [classId],
+    final rows = await _store.queryByField(
+      collectionName: OperationalFirestoreService.assignmentsCollection,
+      field: 'class_id',
+      isEqualTo: classId,
     );
 
     final assignments = rows
@@ -35,35 +35,37 @@ class AssignmentRepository {
   }
 
   Future<AssignmentModel?> getById(String id) async {
-    final db = await _dbHelper.database;
-    final rows = await db.query(
-      DatabaseHelper.tableAssignments,
-      where: 'id = ?',
-      whereArgs: [id],
-      limit: 1,
+    final row = await _store.getDocument(
+      collectionName: OperationalFirestoreService.assignmentsCollection,
+      documentId: id,
     );
-    if (rows.isEmpty) return null;
-    return AssignmentModel.fromDto(rows.first, rows.first['id'].toString());
+    if (row == null) return null;
+    return AssignmentModel.fromDto(row, row['id'].toString());
   }
 
   Future<void> update(AssignmentModel assignment) async {
     if (assignment.id == null) return;
 
-    final db = await _dbHelper.database;
-    await db.update(
-      DatabaseHelper.tableAssignments,
-      assignment.toDto(),
-      where: 'id = ?',
-      whereArgs: [assignment.id],
+    await _store.setDocument(
+      collectionName: OperationalFirestoreService.assignmentsCollection,
+      documentId: assignment.id!,
+      data: assignment.toDto(),
     );
   }
 
   Future<void> delete(String id) async {
-    final db = await _dbHelper.database;
-    await db.delete(
-      DatabaseHelper.tableAssignments,
-      where: 'id = ?',
-      whereArgs: [id],
+    final scores = await _store.queryByField(
+      collectionName: OperationalFirestoreService.scoresCollection,
+      field: 'assignment_id',
+      isEqualTo: id,
+    );
+    await _store.deleteDocumentsByIds(
+      collectionName: OperationalFirestoreService.scoresCollection,
+      documentIds: scores.map((row) => row['id']?.toString() ?? ''),
+    );
+    await _store.deleteDocument(
+      collectionName: OperationalFirestoreService.assignmentsCollection,
+      documentId: id,
     );
   }
 }

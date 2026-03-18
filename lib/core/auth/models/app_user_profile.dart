@@ -11,6 +11,8 @@ class AppUserProfile {
     this.displayName,
     this.organizationId,
     this.teacherId,
+    this.requestStatus,
+    this.signupRequestedAt,
   });
 
   final String uid;
@@ -20,6 +22,8 @@ class AppUserProfile {
   final String? displayName;
   final String? organizationId;
   final String? teacherId;
+  final String? requestStatus;
+  final DateTime? signupRequestedAt;
 
   String get displayLabel {
     final value = displayName?.trim();
@@ -43,6 +47,38 @@ class AppUserProfile {
     return null;
   }
 
+  bool get isPendingApproval {
+    if (role != AppUserRole.teacher || isActive) {
+      return false;
+    }
+
+    final normalizedStatus = requestStatus?.trim().toLowerCase();
+    if (normalizedStatus == 'declined' || normalizedStatus == 'approved') {
+      return false;
+    }
+
+    return normalizedStatus == 'pending' ||
+        signupRequestedAt != null ||
+        (teacherId == null || teacherId!.trim().isEmpty);
+  }
+
+  bool get isDeclined {
+    return !isActive && requestStatus?.trim().toLowerCase() == 'declined';
+  }
+
+  String get accessStateLabel {
+    if (isActive) {
+      return 'Active';
+    }
+    if (isDeclined) {
+      return 'Declined';
+    }
+    if (isPendingApproval) {
+      return 'Pending approval';
+    }
+    return 'Inactive';
+  }
+
   factory AppUserProfile.fromDocument(
     DocumentSnapshot<Map<String, dynamic>> document,
   ) {
@@ -56,6 +92,7 @@ class AppUserProfile {
     }
 
     final rawIsActive = data['isActive'];
+    final rawRequestedAt = data['signupRequestedAt'];
 
     return AppUserProfile(
       uid: document.id,
@@ -67,6 +104,10 @@ class AppUserProfile {
       displayName: data['displayName']?.toString(),
       organizationId: data['organizationId']?.toString(),
       teacherId: data['teacherId']?.toString(),
+      requestStatus: data['requestStatus']?.toString(),
+      signupRequestedAt: rawRequestedAt is Timestamp
+          ? rawRequestedAt.toDate()
+          : DateTime.tryParse(rawRequestedAt?.toString() ?? ''),
     );
   }
 }

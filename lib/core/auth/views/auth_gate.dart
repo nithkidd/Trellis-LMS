@@ -54,10 +54,21 @@ class AuthGate extends ConsumerWidget {
 
             if (!profile.isActive) {
               return _AuthStatusScreen(
-                title: 'This account is currently inactive',
-                message:
-                    'The account exists, but access has been turned off. Ask your administrator to reactivate it.',
-                icon: Icons.lock_outline_rounded,
+                title: profile.isDeclined
+                    ? 'This access request was declined'
+                    : profile.isPendingApproval
+                    ? 'This access request is pending approval'
+                    : 'This account is currently inactive',
+                message: profile.isDeclined
+                    ? 'An administrator reviewed this request and declined access. Contact your organization if you need them to review it again.'
+                    : profile.isPendingApproval
+                    ? 'Your account request was created successfully, but access stays off until an administrator approves it and links the teacher record.'
+                    : 'The account exists, but access has been turned off. Ask your administrator to reactivate it.',
+                icon: profile.isDeclined
+                    ? Icons.cancel_outlined
+                    : profile.isPendingApproval
+                    ? Icons.pending_actions_rounded
+                    : Icons.lock_outline_rounded,
                 actionLabel: 'Sign out',
                 onAction: () => ref.read(authServiceProvider).signOut(),
                 footer: profile.email,

@@ -35,6 +35,7 @@ class ManagedUserProfileInput {
     required this.isActive,
     this.organizationId,
     this.teacherId,
+    this.requestStatus,
   });
 
   final String uid;
@@ -44,6 +45,7 @@ class ManagedUserProfileInput {
   final bool isActive;
   final String? organizationId;
   final String? teacherId;
+  final String? requestStatus;
 }
 
 class SuperadminDirectoryLookups {

@@ -1,26 +1,33 @@
-import '../../../core/database/database_helper.dart';
+import '../../../core/database/operational_firestore_service.dart';
 import '../../subjects/models/subject_model.dart';
 import '../../teachers/models/teacher_model.dart';
 import '../models/class_teacher_subject_model.dart';
 
 class ClassTeacherSubjectRepository {
-  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+  ClassTeacherSubjectRepository({OperationalFirestoreService? store})
+    : _store = store ?? OperationalFirestoreService();
+
+  final OperationalFirestoreService _store;
 
   Future<String> insert(ClassTeacherSubjectModel model) async {
-    final db = await _dbHelper.database;
-    final id = await db.insert(
-      DatabaseHelper.tableClassTeacherSubject,
-      model.toDto(),
+    final documentId = _documentId(
+      classId: model.classId,
+      teacherId: model.teacherId,
+      subjectId: model.subjectId,
     );
-    return id.toString();
+    await _store.setDocument(
+      collectionName: OperationalFirestoreService.classTeacherSubjectsCollection,
+      documentId: documentId,
+      data: model.toDto(),
+      merge: false,
+    );
+    return documentId;
   }
 
   Future<void> delete(String id) async {
-    final db = await _dbHelper.database;
-    await db.delete(
-      DatabaseHelper.tableClassTeacherSubject,
-      where: 'id = ?',
-      whereArgs: [id],
+    await _store.deleteDocument(
+      collectionName: OperationalFirestoreService.classTeacherSubjectsCollection,
+      documentId: id,
     );
   }
 
@@ -29,11 +36,13 @@ class ClassTeacherSubjectRepository {
     required String teacherId,
     required String subjectId,
   }) async {
-    final db = await _dbHelper.database;
-    await db.delete(
-      DatabaseHelper.tableClassTeacherSubject,
-      where: 'class_id = ? AND teacher_id = ? AND subject_id = ?',
-      whereArgs: [classId, teacherId, subjectId],
+    await _store.deleteDocument(
+      collectionName: OperationalFirestoreService.classTeacherSubjectsCollection,
+      documentId: _documentId(
+        classId: classId,
+        teacherId: teacherId,
+        subjectId: subjectId,
+      ),
     );
   }
 
@@ -41,12 +50,14 @@ class ClassTeacherSubjectRepository {
     required String classId,
     required String teacherId,
   }) async {
-    final db = await _dbHelper.database;
-    final rows = await db.query(
-      DatabaseHelper.tableClassTeacherSubject,
-      where: 'class_id = ? AND teacher_id = ?',
-      whereArgs: [classId, teacherId],
+    final classRows = await _store.queryByField(
+      collectionName: OperationalFirestoreService.classTeacherSubjectsCollection,
+      field: 'class_id',
+      isEqualTo: classId,
     );
+    final rows = classRows
+        .where((row) => row['teacher_id']?.toString() == teacherId)
+        .toList(growable: false);
 
     return rows
         .map(
@@ -70,55 +81,27 @@ class ClassTeacherSubjectRepository {
     required String classId,
     required String subjectId,
   }) async {
-    final db = await _dbHelper.database;
-    final rows = await db.rawQuery(
-      '''
-      SELECT
-        cts.id AS assignment_id,
-        t.id AS teacher_id,
-        t.school_id,
-        t.name AS teacher_name,
-        t.created_at AS teacher_created_at,
-        s.id AS subject_id,
-        s.class_id AS subject_class_id,
-        s.name AS subject_name,
-        s.display_order
-      FROM ${DatabaseHelper.tableClassTeacherSubject} cts
-      INNER JOIN ${DatabaseHelper.tableTeachers} t ON t.id = cts.teacher_id
-      INNER JOIN ${DatabaseHelper.tableSubjects} s ON s.id = cts.subject_id
-      WHERE cts.class_id = ? AND cts.subject_id = ?
-      ''',
-      [classId, subjectId],
+    final classRows = await _store.queryByField(
+      collectionName: OperationalFirestoreService.classTeacherSubjectsCollection,
+      field: 'class_id',
+      isEqualTo: classId,
     );
-
-    return rows.map(_mapRowToAssignment).toList();
+    final rows = classRows
+        .where((row) => row['subject_id']?.toString() == subjectId)
+        .toList(growable: false);
+    return _loadJoinedRows(rows);
   }
 
   Future<List<ClassTeacherSubjectRow>> getSubjectsWithTeachers({
     required String classId,
   }) async {
-    final db = await _dbHelper.database;
-    final rows = await db.rawQuery(
-      '''
-      SELECT
-        cts.id AS assignment_id,
-        t.id AS teacher_id,
-        t.school_id,
-        t.name AS teacher_name,
-        t.created_at AS teacher_created_at,
-        s.id AS subject_id,
-        s.class_id AS subject_class_id,
-        s.name AS subject_name,
-        s.display_order
-      FROM ${DatabaseHelper.tableClassTeacherSubject} cts
-      INNER JOIN ${DatabaseHelper.tableTeachers} t ON t.id = cts.teacher_id
-      INNER JOIN ${DatabaseHelper.tableSubjects} s ON s.id = cts.subject_id
-      WHERE cts.class_id = ?
-      ''',
-      [classId],
+    final rows = await _store.queryByField(
+      collectionName: OperationalFirestoreService.classTeacherSubjectsCollection,
+      field: 'class_id',
+      isEqualTo: classId,
     );
 
-    final assignments = rows.map(_mapRowToAssignment).toList();
+    final assignments = await _loadJoinedRows(rows);
     assignments.sort((a, b) {
       final subjectCompare = a.subject.name.compareTo(b.subject.name);
       if (subjectCompare != 0) return subjectCompare;
@@ -127,24 +110,68 @@ class ClassTeacherSubjectRepository {
     return assignments;
   }
 
-  ClassTeacherSubjectRow _mapRowToAssignment(Map<String, Object?> row) {
-    final displayOrder = row['display_order'];
-    return ClassTeacherSubjectRow(
-      teacher: TeacherModel(
-        id: row['teacher_id'].toString(),
-        schoolId: row['school_id'].toString(),
-        name: row['teacher_name']?.toString() ?? '',
-        createdAt: row['teacher_created_at']?.toString(),
-      ),
-      subject: SubjectModel(
-        id: row['subject_id'].toString(),
-        classId: row['subject_class_id'].toString(),
-        name: row['subject_name']?.toString() ?? '',
-        displayOrder: displayOrder == null
-            ? null
-            : int.tryParse(displayOrder.toString()),
-      ),
-      assignmentId: row['assignment_id'].toString(),
+  Future<List<ClassTeacherSubjectRow>> _loadJoinedRows(
+    List<Map<String, dynamic>> rows,
+  ) async {
+    if (rows.isEmpty) {
+      return const [];
+    }
+
+    final teacherIds = rows
+        .map((row) => row['teacher_id']?.toString() ?? '')
+        .where((value) => value.isNotEmpty)
+        .toList(growable: false);
+    final subjectIds = rows
+        .map((row) => row['subject_id']?.toString() ?? '')
+        .where((value) => value.isNotEmpty)
+        .toList(growable: false);
+
+    final teacherRows = await _store.queryByIds(
+      collectionName: OperationalFirestoreService.teachersCollection,
+      ids: teacherIds,
     );
+    final subjectRows = await _store.queryByIds(
+      collectionName: OperationalFirestoreService.subjectsCollection,
+      ids: subjectIds,
+    );
+
+    final teachersById = {
+      for (final teacher in teacherRows)
+        teacher['id'].toString(): TeacherModel.fromDto(
+          teacher,
+          teacher['id'].toString(),
+        ),
+    };
+    final subjectsById = {
+      for (final subject in subjectRows)
+        subject['id'].toString(): SubjectModel.fromDto(
+          subject,
+          subject['id'].toString(),
+        ),
+    };
+
+    return rows
+        .map((row) {
+          final teacher = teachersById[row['teacher_id']?.toString()];
+          final subject = subjectsById[row['subject_id']?.toString()];
+          if (teacher == null || subject == null) {
+            return null;
+          }
+          return ClassTeacherSubjectRow(
+            teacher: teacher,
+            subject: subject,
+            assignmentId: row['id'].toString(),
+          );
+        })
+        .whereType<ClassTeacherSubjectRow>()
+        .toList(growable: false);
+  }
+
+  String _documentId({
+    required String classId,
+    required String teacherId,
+    required String subjectId,
+  }) {
+    return '${classId}_${teacherId}_$subjectId';
   }
 }

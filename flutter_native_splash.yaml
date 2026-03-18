@@ -17,6 +17,7 @@ flutter_native_splash:
 
   # iOS-specific settings:
   ios: true
+  web: false
 
   android_gravity: center
   ios_content_mode: center

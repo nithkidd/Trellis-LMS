@@ -1,40 +1,37 @@
-import '../../../core/database/database_helper.dart';
+import '../../../core/database/operational_firestore_service.dart';
+import '../../assignments/models/assignment_model.dart';
+import '../../assignments/repositories/assignment_repository.dart';
 import '../models/score_model.dart';
 
 class ScoreRepository {
-  final DatabaseHelper _dbHelper = DatabaseHelper.instance;
+  ScoreRepository({
+    OperationalFirestoreService? store,
+    AssignmentRepository? assignmentRepository,
+  }) : _store = store ?? OperationalFirestoreService(),
+       _assignmentRepository = assignmentRepository ?? AssignmentRepository();
+
+  final OperationalFirestoreService _store;
+  final AssignmentRepository _assignmentRepository;
 
   Future<String> upsert(ScoreModel score) async {
-    final db = await _dbHelper.database;
-    final existing = await db.query(
-      DatabaseHelper.tableScores,
-      columns: ['id'],
-      where: 'student_id = ? AND assignment_id = ?',
-      whereArgs: [score.studentId, score.assignmentId],
-      limit: 1,
+    final documentId = _scoreDocumentId(
+      studentId: score.studentId,
+      assignmentId: score.assignmentId,
     );
-
-    if (existing.isNotEmpty) {
-      final existingId = existing.first['id'].toString();
-      await db.update(
-        DatabaseHelper.tableScores,
-        score.toDto(),
-        where: 'id = ?',
-        whereArgs: [existingId],
-      );
-      return existingId;
-    }
-
-    final id = await db.insert(DatabaseHelper.tableScores, score.toDto());
-    return id.toString();
+    await _store.setDocument(
+      collectionName: OperationalFirestoreService.scoresCollection,
+      documentId: documentId,
+      data: score.toDto(),
+      merge: false,
+    );
+    return documentId;
   }
 
   Future<List<ScoreModel>> getScoresByStudentId(String studentId) async {
-    final db = await _dbHelper.database;
-    final rows = await db.query(
-      DatabaseHelper.tableScores,
-      where: 'student_id = ?',
-      whereArgs: [studentId],
+    final rows = await _store.queryByField(
+      collectionName: OperationalFirestoreService.scoresCollection,
+      field: 'student_id',
+      isEqualTo: studentId,
     );
     return rows
         .map((row) => ScoreModel.fromDto(row, row['id'].toString()))
@@ -42,11 +39,10 @@ class ScoreRepository {
   }
 
   Future<List<ScoreModel>> getScoresByAssignmentId(String assignmentId) async {
-    final db = await _dbHelper.database;
-    final rows = await db.query(
-      DatabaseHelper.tableScores,
-      where: 'assignment_id = ?',
-      whereArgs: [assignmentId],
+    final rows = await _store.queryByField(
+      collectionName: OperationalFirestoreService.scoresCollection,
+      field: 'assignment_id',
+      isEqualTo: assignmentId,
     );
     return rows
         .map((row) => ScoreModel.fromDto(row, row['id'].toString()))
@@ -54,49 +50,42 @@ class ScoreRepository {
   }
 
   Future<ScoreModel?> getById(String id) async {
-    final db = await _dbHelper.database;
-    final rows = await db.query(
-      DatabaseHelper.tableScores,
-      where: 'id = ?',
-      whereArgs: [id],
-      limit: 1,
+    final row = await _store.getDocument(
+      collectionName: OperationalFirestoreService.scoresCollection,
+      documentId: id,
     );
-    if (rows.isEmpty) return null;
-    return ScoreModel.fromDto(rows.first, rows.first['id'].toString());
+    if (row == null) return null;
+    return ScoreModel.fromDto(row, row['id'].toString());
   }
 
   Future<void> update(ScoreModel score) async {
     if (score.id == null) return;
 
-    final db = await _dbHelper.database;
-    await db.update(
-      DatabaseHelper.tableScores,
-      score.toDto(),
-      where: 'id = ?',
-      whereArgs: [score.id],
+    await _store.setDocument(
+      collectionName: OperationalFirestoreService.scoresCollection,
+      documentId: score.id!,
+      data: score.toDto(),
+      merge: false,
     );
   }
 
   Future<void> delete(String id) async {
-    final db = await _dbHelper.database;
-    await db.delete(
-      DatabaseHelper.tableScores,
-      where: 'id = ?',
-      whereArgs: [id],
+    await _store.deleteDocument(
+      collectionName: OperationalFirestoreService.scoresCollection,
+      documentId: id,
     );
   }
 
   Future<List<ScoreModel>> getScoresByClassId(String classId) async {
-    final db = await _dbHelper.database;
-    final rows = await db.rawQuery(
-      '''
-      SELECT sc.*
-      FROM ${DatabaseHelper.tableScores} sc
-      INNER JOIN ${DatabaseHelper.tableAssignments} a
-        ON a.id = sc.assignment_id
-      WHERE a.class_id = ?
-      ''',
-      [classId],
+    final assignments = await _assignmentRepository.getByClassId(classId);
+    final assignmentIds = assignments
+        .map((assignment) => assignment.id)
+        .whereType<String>()
+        .toList(growable: false);
+    final rows = await _store.queryByFieldIn(
+      collectionName: OperationalFirestoreService.scoresCollection,
+      field: 'assignment_id',
+      values: assignmentIds,
     );
     return rows
         .map((row) => ScoreModel.fromDto(row, row['id'].toString()))
@@ -104,17 +93,30 @@ class ScoreRepository {
   }
 
   Future<double> getAverageScoreByStudentId(String studentId) async {
-    final db = await _dbHelper.database;
-    final rows = await db.rawQuery(
-      '''
-      SELECT sc.points_earned, a.max_points
-      FROM ${DatabaseHelper.tableScores} sc
-      INNER JOIN ${DatabaseHelper.tableAssignments} a
-        ON a.id = sc.assignment_id
-      WHERE sc.student_id = ?
-      ''',
-      [studentId],
+    final scores = await getScoresByStudentId(studentId);
+    if (scores.isEmpty) return 0.0;
+
+    final assignments = await Future.wait(
+      scores.map((score) => _assignmentRepository.getById(score.assignmentId)),
     );
+    final assignmentsById = {
+      for (final assignment in assignments.whereType<AssignmentModel>())
+        if (assignment.id != null) assignment.id!: assignment,
+    };
+
+    final rows = scores
+        .map((score) {
+          final assignment = assignmentsById[score.assignmentId];
+          if (assignment == null) {
+            return null;
+          }
+          return {
+            'points_earned': score.pointsEarned,
+            'max_points': assignment.maxPoints,
+          };
+        })
+        .whereType<Map<String, Object?>>()
+        .toList(growable: false);
     if (rows.isEmpty) return 0.0;
 
     double totalEarned = 0;
@@ -125,5 +127,12 @@ class ScoreRepository {
     }
 
     return totalMax > 0 ? (totalEarned / totalMax) * 100 : 0.0;
+  }
+
+  String _scoreDocumentId({
+    required String studentId,
+    required String assignmentId,
+  }) {
+    return '${assignmentId}_$studentId';
   }
 }

@@ -208,6 +208,40 @@ service cloud.firestore {
       allow delete: if canAccessLinkedClass(resource.data.classId);
     }
 
+    match /operational_schools/{schoolId} {
+      allow read: if activeToken();
+      allow write: if isSuperadmin();
+    }
+
+    match /operational_teachers/{teacherId} {
+      allow read: if activeToken();
+      allow write: if isSuperadmin() || isOrganizationAdmin();
+    }
+
+    match /operational_classes/{classId} {
+      allow read, write: if activeToken();
+    }
+
+    match /operational_subjects/{subjectId} {
+      allow read, write: if activeToken();
+    }
+
+    match /operational_class_teacher_subjects/{mappingId} {
+      allow read, write: if activeToken();
+    }
+
+    match /operational_students/{studentId} {
+      allow read, write: if activeToken();
+    }
+
+    match /operational_assignments/{assignmentId} {
+      allow read, write: if activeToken();
+    }
+
+    match /operational_scores/{scoreId} {
+      allow read, write: if activeToken();
+    }
+
     match /audit_logs/{logId} {
       allow read, write: if isSuperadmin();
     }

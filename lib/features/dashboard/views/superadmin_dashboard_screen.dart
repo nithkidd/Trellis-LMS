@@ -307,9 +307,15 @@ class SuperadminDashboardScreen extends ConsumerWidget {
           right: DashboardSectionCard(
             title: 'Schools',
             subtitle:
-                'Manage the local school directory that teachers and operational records attach to.',
+                'Manage the school directory under each organization so teacher records always attach through the right scope.',
             trailing: FilledButton.icon(
-              onPressed: () => _showSchoolDialog(context, ref),
+              onPressed: organizationsState.hasValue
+                  ? () => _showSchoolDialog(
+                      context,
+                      ref,
+                      organizations: organizationsState.requireValue,
+                    )
+                  : null,
               icon: const Icon(Icons.add_business_rounded),
               label: const Text('Add school'),
             ),
@@ -322,7 +328,7 @@ class SuperadminDashboardScreen extends ConsumerWidget {
               data: (schools) {
                 if (schools.isEmpty) {
                   return const Text(
-                    'No schools exist yet. Create one before linking teacher records or operational classes.',
+                    'No schools exist yet. Create one inside an organization before linking teacher records or operational classes.',
                     style: AppTextStyles.body,
                   );
                 }
@@ -332,9 +338,19 @@ class SuperadminDashboardScreen extends ConsumerWidget {
                     for (var index = 0; index < schools.length; index++) ...[
                       _ManagedSchoolTile(
                         school: schools[index],
+                        organizationName: organizationsState.hasValue
+                            ? _organizationNameFromList(
+                                schools[index].organizationId,
+                                organizationsState.requireValue,
+                              )
+                            : (schools[index].organizationId ??
+                                  'Unscoped organization'),
                         onEdit: () => _showSchoolDialog(
                           context,
                           ref,
+                          organizations: organizationsState.hasValue
+                              ? organizationsState.requireValue
+                              : const <ManagedOrganization>[],
                           existing: schools[index],
                         ),
                         onDelete: () =>
@@ -394,6 +410,9 @@ class SuperadminDashboardScreen extends ConsumerWidget {
     required bool compact,
     required SuperadminDashboardSummary summary,
   }) {
+    final pendingRequestsState = ref.watch(
+      superadminPendingTeacherRequestsProvider,
+    );
     final adminProfilesState = ref.watch(superadminAdminProfilesProvider);
     final teacherProfilesState = ref.watch(superadminTeacherProfilesProvider);
     final teacherRecordsState = ref.watch(superadminTeachersProvider);
@@ -401,6 +420,26 @@ class SuperadminDashboardScreen extends ConsumerWidget {
 
     return Column(
       children: [
+        DashboardSectionCard(
+          title: 'Pending teacher requests',
+          subtitle:
+              'Self-sign-up requests land here first. Approval links the request to a teacher record and activates access.',
+          trailing: TrellisInfoBadge(
+            label: pendingRequestsState.hasValue
+                ? '${pendingRequestsState.requireValue.length} pending'
+                : 'Approval queue',
+            accent: TrellisAccentPalette.warning(
+              icon: Icons.pending_actions_rounded,
+            ),
+          ),
+          child: _buildPendingRequestList(
+            context,
+            ref,
+            state: pendingRequestsState,
+            lookupsState: lookupsState,
+          ),
+        ),
+        const SizedBox(height: AppSizes.paddingLg),
         DashboardSectionCard(
           title: 'Access control',
           subtitle:
@@ -697,6 +736,64 @@ class SuperadminDashboardScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildPendingRequestList(
+    BuildContext context,
+    WidgetRef ref, {
+    required AsyncValue<List<AppUserProfile>> state,
+    required AsyncValue<SuperadminDirectoryLookups> lookupsState,
+  }) {
+    return state.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, _) => Text(
+        '$error',
+        style: AppTextStyles.body.copyWith(color: AppColors.danger),
+      ),
+      data: (profiles) {
+        if (profiles.isEmpty) {
+          return const Text(
+            'No teacher access requests are pending right now.',
+            style: AppTextStyles.body,
+          );
+        }
+
+        return Column(
+          children: [
+            for (var index = 0; index < profiles.length; index++) ...[
+              _PendingRequestTile(
+                profile: profiles[index],
+                organizationLabel: lookupsState.hasValue
+                    ? _organizationNameById(
+                        profiles[index].organizationId,
+                        lookupsState.requireValue,
+                      )
+                    : (profiles[index].organizationId ??
+                          'Unknown organization'),
+                submittedLabel: _requestDateLabel(
+                  profiles[index].signupRequestedAt,
+                ),
+                onApprove: lookupsState.hasValue
+                    ? () => _showApproveTeacherRequestDialog(
+                        context,
+                        ref,
+                        lookups: lookupsState.requireValue,
+                        profile: profiles[index],
+                      )
+                    : null,
+                onDecline: () => _confirmDeclineTeacherRequest(
+                  context,
+                  ref,
+                  profiles[index],
+                ),
+              ),
+              if (index != profiles.length - 1)
+                const SizedBox(height: AppSizes.paddingMd),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
   String _schoolNameForTeacher(
     TeacherModel teacher,
     AsyncValue<SuperadminDirectoryLookups> lookupsState,
@@ -705,23 +802,77 @@ class SuperadminDashboardScreen extends ConsumerWidget {
       return 'School ${teacher.schoolId}';
     }
 
-    for (final school in lookupsState.requireValue.schools) {
-      if (school.id == teacher.schoolId) {
-        return school.name;
-      }
-    }
-
-    return 'School ${teacher.schoolId}';
+    return _schoolLabelById(teacher.schoolId, lookupsState.requireValue);
   }
 
-  String _schoolNameById(String schoolId, SuperadminDirectoryLookups lookups) {
+  String _schoolLabelById(String schoolId, SuperadminDirectoryLookups lookups) {
     for (final school in lookups.schools) {
       if (school.id == schoolId) {
-        return school.name;
+        final organizationLabel = _organizationNameById(
+          school.organizationId,
+          lookups,
+        );
+        return '${school.name} - $organizationLabel';
       }
     }
 
     return 'School $schoolId';
+  }
+
+  String _organizationNameById(
+    String? organizationId,
+    SuperadminDirectoryLookups lookups,
+  ) {
+    return _organizationNameFromList(organizationId, lookups.organizations);
+  }
+
+  String _organizationNameFromList(
+    String? organizationId,
+    List<ManagedOrganization> organizations,
+  ) {
+    if (organizationId == null || organizationId.trim().isEmpty) {
+      return 'Unscoped organization';
+    }
+
+    for (final organization in organizations) {
+      if (organization.id == organizationId) {
+        return organization.name;
+      }
+    }
+
+    return organizationId;
+  }
+
+  List<TeacherModel> _teachersForOrganization(
+    SuperadminDirectoryLookups lookups,
+    String? organizationId,
+  ) {
+    if (organizationId == null || organizationId.trim().isEmpty) {
+      return const <TeacherModel>[];
+    }
+
+    final schoolIds = lookups.schools
+        .where((school) => school.organizationId == organizationId)
+        .map((school) => school.id)
+        .whereType<String>()
+        .toSet();
+
+    return lookups.teachers
+        .where((teacher) => schoolIds.contains(teacher.schoolId))
+        .toList(growable: false);
+  }
+
+  String _requestDateLabel(DateTime? date) {
+    if (date == null) {
+      return 'Request time unavailable';
+    }
+
+    final local = date.toLocal();
+    final month = local.month.toString().padLeft(2, '0');
+    final day = local.day.toString().padLeft(2, '0');
+    final hour = local.hour.toString().padLeft(2, '0');
+    final minute = local.minute.toString().padLeft(2, '0');
+    return 'Requested ${local.year}-$month-$day $hour:$minute';
   }
 
   Future<void> _showOrganizationDialog(
@@ -828,34 +979,72 @@ class SuperadminDashboardScreen extends ConsumerWidget {
   Future<void> _showSchoolDialog(
     BuildContext context,
     WidgetRef ref, {
+    required List<ManagedOrganization> organizations,
     SchoolModel? existing,
   }) async {
     final nameController = TextEditingController(text: existing?.name ?? '');
+    final organizationIds = organizations.map((item) => item.id).toSet();
+    String? organizationId = existing?.organizationId;
+    if (organizationId == null ||
+        organizationId.isEmpty ||
+        !organizationIds.contains(organizationId)) {
+      organizationId = organizations.isNotEmpty ? organizations.first.id : null;
+    }
+
+    if (organizations.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Create an organization before creating schools.'),
+        ),
+      );
+      return;
+    }
 
     final submitted = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(existing == null ? 'Create school' : 'Edit school'),
-        content: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: TextField(
-            controller: nameController,
-            decoration: const InputDecoration(
-              labelText: 'School name',
-              hintText: 'Kandal Demonstration School',
+      builder: (context) => StatefulBuilder(
+        builder: (context, setStateDialog) => AlertDialog(
+          title: Text(existing == null ? 'Create school' : 'Edit school'),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  initialValue: organizationId,
+                  decoration: const InputDecoration(labelText: 'Organization'),
+                  items: [
+                    for (final organization in organizations)
+                      DropdownMenuItem(
+                        value: organization.id,
+                        child: Text(organization.name),
+                      ),
+                  ],
+                  onChanged: (value) =>
+                      setStateDialog(() => organizationId = value),
+                ),
+                const SizedBox(height: AppSizes.paddingMd),
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'School name',
+                    hintText: 'Kandal Demonstration School',
+                  ),
+                ),
+              ],
             ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(existing == null ? 'Create' : 'Save'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(existing == null ? 'Create' : 'Save'),
-          ),
-        ],
       ),
     );
 
@@ -868,10 +1057,12 @@ class SuperadminDashboardScreen extends ConsumerWidget {
     }
 
     final name = nameController.text.trim();
-    if (name.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('School name is required.')));
+    if (name.isEmpty || organizationId == null || organizationId!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('School name and organization are required.'),
+        ),
+      );
       return;
     }
 
@@ -879,11 +1070,15 @@ class SuperadminDashboardScreen extends ConsumerWidget {
       if (existing == null) {
         await ref
             .read(superadminSchoolsProvider.notifier)
-            .createSchool(name: name);
+            .createSchool(organizationId: organizationId!, name: name);
       } else {
         await ref
             .read(superadminSchoolsProvider.notifier)
-            .updateSchool(id: existing.id!, name: name);
+            .updateSchool(
+              id: existing.id!,
+              organizationId: organizationId!,
+              name: name,
+            );
       }
     } catch (error) {
       if (!context.mounted) return;
@@ -987,17 +1182,34 @@ class SuperadminDashboardScreen extends ConsumerWidget {
       text: existing?.displayName ?? '',
     );
     final emailController = TextEditingController(text: existing?.email ?? '');
+    final organizationIds = lookups.organizations
+        .map((item) => item.id)
+        .toSet();
     var roleValue = existing?.role.storageValue ?? initialRoleValue;
     var isActive = existing?.isActive ?? true;
     String? organizationId = existing?.organizationId;
+    if (organizationId != null && !organizationIds.contains(organizationId)) {
+      organizationId = null;
+    }
     String? teacherId = existing?.teacherId;
+    final initialTeacherOptions = _teachersForOrganization(
+      lookups,
+      organizationId,
+    );
+    if (teacherId != null &&
+        !initialTeacherOptions.any((teacher) => teacher.id == teacherId)) {
+      teacherId = null;
+    }
 
     final submitted = await showDialog<bool>(
       context: context,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
-            final teacherOptions = lookups.teachers;
+            final teacherOptions = _teachersForOrganization(
+              lookups,
+              organizationId,
+            );
 
             return AlertDialog(
               title: Text(existing == null ? 'Create profile' : 'Edit profile'),
@@ -1047,6 +1259,10 @@ class SuperadminDashboardScreen extends ConsumerWidget {
                             roleValue = value;
                             if (value != 'teacher') {
                               teacherId = null;
+                            } else if (!teacherOptions.any(
+                              (teacher) => teacher.id == teacherId,
+                            )) {
+                              teacherId = null;
                             }
                           });
                         },
@@ -1064,8 +1280,18 @@ class SuperadminDashboardScreen extends ConsumerWidget {
                               child: Text(organization.name),
                             ),
                         ],
-                        onChanged: (value) =>
-                            setStateDialog(() => organizationId = value),
+                        onChanged: (value) => setStateDialog(() {
+                          organizationId = value;
+                          final nextTeacherOptions = _teachersForOrganization(
+                            lookups,
+                            value,
+                          );
+                          if (!nextTeacherOptions.any(
+                            (teacher) => teacher.id == teacherId,
+                          )) {
+                            teacherId = null;
+                          }
+                        }),
                       ),
                       if (roleValue == 'teacher') ...[
                         const SizedBox(height: AppSizes.paddingMd),
@@ -1079,7 +1305,7 @@ class SuperadminDashboardScreen extends ConsumerWidget {
                               DropdownMenuItem(
                                 value: teacher.id,
                                 child: Text(
-                                  '${teacher.name} • ${_schoolNameById(teacher.schoolId, lookups)}',
+                                  '${teacher.name} - ${_schoolLabelById(teacher.schoolId, lookups)}',
                                 ),
                               ),
                           ],
@@ -1154,6 +1380,7 @@ class SuperadminDashboardScreen extends ConsumerWidget {
               isActive: isActive,
               organizationId: organizationId,
               teacherId: roleValue == 'teacher' ? teacherId : null,
+              requestStatus: existing?.requestStatus,
             ),
           );
     } catch (error) {
@@ -1171,9 +1398,14 @@ class SuperadminDashboardScreen extends ConsumerWidget {
     TeacherModel? existing,
   }) async {
     final nameController = TextEditingController(text: existing?.name ?? '');
-    String? schoolId =
-        existing?.schoolId ??
-        (lookups.schools.isNotEmpty ? lookups.schools.first.id : null);
+    final schoolIds = lookups.schools
+        .map((school) => school.id)
+        .whereType<String>()
+        .toSet();
+    String? schoolId = existing?.schoolId;
+    if (schoolId == null || schoolId.isEmpty || !schoolIds.contains(schoolId)) {
+      schoolId = lookups.schools.isNotEmpty ? lookups.schools.first.id : null;
+    }
 
     final submitted = await showDialog<bool>(
       context: context,
@@ -1205,7 +1437,9 @@ class SuperadminDashboardScreen extends ConsumerWidget {
                       for (final school in lookups.schools)
                         DropdownMenuItem(
                           value: school.id,
-                          child: Text(school.name),
+                          child: Text(
+                            '${school.name} - ${_organizationNameById(school.organizationId, lookups)}',
+                          ),
                         ),
                     ],
                     onChanged: (value) =>
@@ -1345,6 +1579,153 @@ class SuperadminDashboardScreen extends ConsumerWidget {
     }
   }
 
+  Future<void> _showApproveTeacherRequestDialog(
+    BuildContext context,
+    WidgetRef ref, {
+    required SuperadminDirectoryLookups lookups,
+    required AppUserProfile profile,
+  }) async {
+    final teacherOptions = _teachersForOrganization(
+      lookups,
+      profile.organizationId,
+    );
+    String? teacherId = profile.teacherId;
+    if (teacherId != null &&
+        !teacherOptions.any((teacher) => teacher.id == teacherId)) {
+      teacherId = null;
+    }
+
+    final submitted = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) => AlertDialog(
+            title: const Text('Approve teacher request'),
+            content: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    profile.displayLabel,
+                    style: AppTextStyles.body.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(profile.email, style: AppTextStyles.caption),
+                  const SizedBox(height: AppSizes.paddingMd),
+                  Text(
+                    _organizationNameById(profile.organizationId, lookups),
+                    style: AppTextStyles.caption,
+                  ),
+                  const SizedBox(height: AppSizes.paddingMd),
+                  DropdownButtonFormField<String>(
+                    initialValue: teacherId,
+                    decoration: const InputDecoration(
+                      labelText: 'Teacher record',
+                    ),
+                    items: [
+                      for (final teacher in teacherOptions)
+                        DropdownMenuItem(
+                          value: teacher.id,
+                          child: Text(
+                            '${teacher.name} - ${_schoolLabelById(teacher.schoolId, lookups)}',
+                          ),
+                        ),
+                    ],
+                    onChanged: (value) =>
+                        setStateDialog(() => teacherId = value),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Approve'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (submitted != true) {
+      return;
+    }
+
+    if (!context.mounted) {
+      return;
+    }
+
+    if (teacherId == null || teacherId!.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Choose a teacher record before approving access.'),
+        ),
+      );
+      return;
+    }
+
+    try {
+      await ref
+          .read(superadminUserProfilesProvider.notifier)
+          .approveTeacherRequest(uid: profile.uid, teacherId: teacherId!);
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Unable to approve request: $error')),
+      );
+    }
+  }
+
+  Future<void> _confirmDeclineTeacherRequest(
+    BuildContext context,
+    WidgetRef ref,
+    AppUserProfile profile,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Decline teacher request'),
+        content: Text(
+          'Decline the request from ${profile.displayLabel}? The account stays created, but the profile will be marked as declined and kept inactive.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Decline'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) {
+      return;
+    }
+
+    try {
+      await ref
+          .read(superadminUserProfilesProvider.notifier)
+          .declineTeacherRequest(profile.uid);
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Unable to decline request: $error')),
+      );
+    }
+  }
+
   Widget _buildSplit({
     required bool compact,
     required Widget left,
@@ -1453,11 +1834,13 @@ class _ManagedOrganizationTile extends StatelessWidget {
 class _ManagedSchoolTile extends StatelessWidget {
   const _ManagedSchoolTile({
     required this.school,
+    required this.organizationName,
     required this.onEdit,
     required this.onDelete,
   });
 
   final SchoolModel school;
+  final String organizationName;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -1486,6 +1869,11 @@ class _ManagedSchoolTile extends StatelessWidget {
                   style: AppTextStyles.body.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Organization: $organizationName',
+                  style: AppTextStyles.caption,
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -1569,10 +1957,18 @@ class _ManagedProfileTile extends StatelessWidget {
                         ),
                       ),
                     TrellisInfoBadge(
-                      label: profile.isActive ? 'Active' : 'Inactive',
+                      label: profile.accessStateLabel,
                       accent: profile.isActive
                           ? TrellisAccentPalette.success(
                               icon: Icons.verified_rounded,
+                            )
+                          : profile.isDeclined
+                          ? TrellisAccentPalette.rose(
+                              icon: Icons.cancel_outlined,
+                            )
+                          : profile.isPendingApproval
+                          ? TrellisAccentPalette.warning(
+                              icon: Icons.pending_actions_rounded,
                             )
                           : TrellisAccentPalette.warning(
                               icon: Icons.pause_circle_outline_rounded,
@@ -1659,6 +2055,94 @@ class _ManagedTeacherTile extends StatelessWidget {
             onPressed: onDelete,
             icon: const Icon(Icons.delete_outline_rounded),
             tooltip: 'Delete teacher',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PendingRequestTile extends StatelessWidget {
+  const _PendingRequestTile({
+    required this.profile,
+    required this.organizationLabel,
+    required this.submittedLabel,
+    required this.onDecline,
+    this.onApprove,
+  });
+
+  final AppUserProfile profile;
+  final String organizationLabel;
+  final String submittedLabel;
+  final VoidCallback? onApprove;
+  final VoidCallback onDecline;
+
+  @override
+  Widget build(BuildContext context) {
+    return TrellisSectionSurface(
+      padding: const EdgeInsets.all(AppSizes.paddingMd),
+      backgroundColor: AppColors.surface,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TrellisAccentIcon(
+            accent: TrellisAccentPalette.warning(
+              icon: Icons.pending_actions_rounded,
+            ),
+            shape: BoxShape.rectangle,
+            borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+          ),
+          const SizedBox(width: AppSizes.paddingMd),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  profile.displayLabel,
+                  style: AppTextStyles.body.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(profile.email, style: AppTextStyles.caption),
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: AppSizes.paddingSm,
+                  runSpacing: AppSizes.paddingSm,
+                  children: [
+                    TrellisInfoBadge(
+                      label: organizationLabel,
+                      accent: TrellisAccentPalette.primary(
+                        icon: Icons.apartment_rounded,
+                      ),
+                    ),
+                    TrellisInfoBadge(
+                      label: submittedLabel,
+                      accent: TrellisAccentPalette.byIndex(
+                        5,
+                        icon: Icons.schedule_rounded,
+                      ),
+                    ),
+                    TrellisInfoBadge(
+                      label: 'Teacher request',
+                      accent: TrellisAccentPalette.warning(
+                        icon: Icons.badge_outlined,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Column(
+            children: [
+              FilledButton(onPressed: onApprove, child: const Text('Approve')),
+              const SizedBox(height: AppSizes.paddingSm),
+              OutlinedButton(
+                onPressed: onDecline,
+                child: const Text('Decline'),
+              ),
+            ],
           ),
         ],
       ),

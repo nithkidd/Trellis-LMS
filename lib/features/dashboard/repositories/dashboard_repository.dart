@@ -1,10 +1,12 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:sqflite/sqflite.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../core/auth/models/app_user_profile.dart';
 import '../../../core/auth/models/app_user_role.dart';
 import '../../../core/auth/services/auth_service.dart';
-import '../../../core/database/database_helper.dart';
+import '../../../core/database/operational_firestore_service.dart';
 import '../../../core/utils/khmer_collator.dart';
 import '../../assignments/data/khmer_months_list.dart';
 import '../../assignments/models/assignment_model.dart';
@@ -18,18 +20,31 @@ import '../../teachers/models/teacher_model.dart';
 import '../models/dashboard_summary.dart';
 
 class DashboardRepository {
-  DashboardRepository({FirebaseFirestore? firestore, DatabaseHelper? dbHelper})
-    : _firestore = firestore ?? FirebaseFirestore.instance,
-      _dbHelper = dbHelper ?? DatabaseHelper.instance;
+  DashboardRepository({
+    FirebaseFirestore? firestore,
+    OperationalFirestoreService? operationalStore,
+  }) : _firestore = firestore ?? FirebaseFirestore.instance,
+       _operationalStore =
+           operationalStore ??
+           OperationalFirestoreService(
+             firestore: firestore ?? FirebaseFirestore.instance,
+           );
+
+  static const Duration _firestoreReadTimeout = Duration(seconds: 12);
+  static const Duration _localSnapshotTimeout = Duration(seconds: 8);
+  static const Duration _webLocalSnapshotTimeout = Duration(seconds: 3);
 
   final FirebaseFirestore _firestore;
-  final DatabaseHelper _dbHelper;
+  final OperationalFirestoreService _operationalStore;
 
   Future<SuperadminDashboardSummary> loadSuperadminSummary(
     AppUserProfile viewer,
   ) async {
-    final profileResult = await _loadProfiles();
-    final local = await _loadLocalSnapshot();
+    final profileFuture = _loadProfilesSafely();
+    final localFuture = _loadLocalSnapshotSafely();
+    final profileResult = await profileFuture;
+    final localResult = await localFuture;
+    final local = localResult.snapshot;
 
     final organizations = profileResult.profiles
         .map((profile) => profile.organizationId?.trim() ?? '')
@@ -116,6 +131,12 @@ class DashboardRepository {
         DashboardAlert(
           title: 'Access profiles unavailable',
           message: profileResult.errorMessage!,
+          severity: DashboardAlertSeverity.warning,
+        ),
+      if (localResult.errorMessage != null)
+        DashboardAlert(
+          title: 'Operational snapshot unavailable',
+          message: localResult.errorMessage!,
           severity: DashboardAlertSeverity.warning,
         ),
       if (profileResult.invalidDocumentCount > 0)
@@ -381,7 +402,8 @@ class DashboardRepository {
     AppUserProfile viewer,
   ) async {
     final organizationId = viewer.organizationId?.trim();
-    final profileResult = await _loadProfiles();
+    final profileFuture = _loadProfilesSafely();
+    final profileResult = await profileFuture;
 
     if (organizationId == null || organizationId.isEmpty) {
       return OrganizationAdminDashboardSummary(
@@ -425,7 +447,10 @@ class DashboardRepository {
       );
     }
 
-    final local = await _loadLocalSnapshot();
+    final localResult = await _loadLocalSnapshotSafely(
+      organizationId: organizationId,
+    );
+    final local = localResult.snapshot;
 
     final classInsights = _buildClassInsights(
       classes: local.classes,
@@ -669,6 +694,12 @@ class DashboardRepository {
           message: profileResult.errorMessage!,
           severity: DashboardAlertSeverity.warning,
         ),
+      if (localResult.errorMessage != null)
+        DashboardAlert(
+          title: 'Operational snapshot unavailable',
+          message: localResult.errorMessage!,
+          severity: DashboardAlertSeverity.warning,
+        ),
       if (missingTeacherLinks > 0)
         DashboardAlert(
           title: 'Teacher profile mismatches',
@@ -754,7 +785,8 @@ class DashboardRepository {
     try {
       final snapshot = await _firestore
           .collection(AuthService.userProfilesCollection)
-          .get();
+          .get()
+          .timeout(_firestoreReadTimeout);
 
       final profiles = <AppUserProfile>[];
       var invalidDocumentCount = 0;
@@ -778,27 +810,85 @@ class DashboardRepository {
     }
   }
 
-  Future<_LocalDashboardSnapshot> _loadLocalSnapshot({String? schoolId}) async {
-    final db = await _dbHelper.database;
-    final schools = await _loadSchools(db, schoolId: schoolId);
-    final classes = await _loadClasses(db, schoolId: schoolId);
-    final classIds = classes
-        .map((classModel) => classModel.id)
-        .whereType<String>()
-        .toList();
-    final teachers = await _loadTeachers(db, schoolId: schoolId);
-    final subjects = await _loadSubjects(db, classIds: classIds);
-    final assignments = await _loadAssignments(db, classIds: classIds);
+  Future<_ProfileLoadResult> _loadProfilesSafely() async {
+    try {
+      return await _loadProfiles();
+    } on TimeoutException {
+      return const _ProfileLoadResult(
+        profiles: [],
+        errorMessage:
+            'Timed out while loading Firestore access profiles. Check hosted web Firebase connectivity and role claim propagation for this account.',
+      );
+    } catch (error) {
+      return _ProfileLoadResult(
+        profiles: const [],
+        errorMessage: 'Unable to load Firestore access profiles: $error',
+      );
+    }
+  }
+
+  Future<_LocalDashboardSnapshot> _loadLocalSnapshot({
+    String? schoolId,
+    String? organizationId,
+  }) async {
+    late final List<SchoolModel> schools;
+    late final List<Map<String, dynamic>> classRows;
+    late final List<TeacherModel> teachers;
+
+    if (schoolId != null && schoolId.isNotEmpty) {
+      final results = await Future.wait<dynamic>([
+        _loadSchools(schoolId: schoolId),
+        _loadClassRows(schoolId: schoolId),
+        _loadTeachers(schoolId: schoolId),
+      ]);
+      schools = results[0] as List<SchoolModel>;
+      classRows = results[1] as List<Map<String, dynamic>>;
+      teachers = results[2] as List<TeacherModel>;
+    } else if (organizationId != null && organizationId.isNotEmpty) {
+      schools = await _loadSchools(organizationId: organizationId);
+      final schoolIds = schools
+          .map((school) => school.id)
+          .whereType<String>()
+          .toList(growable: false);
+      final results = await Future.wait<dynamic>([
+        _loadClassRows(schoolIds: schoolIds),
+        _loadTeachers(schoolIds: schoolIds),
+      ]);
+      classRows = results[0] as List<Map<String, dynamic>>;
+      teachers = results[1] as List<TeacherModel>;
+    } else {
+      final results = await Future.wait<dynamic>([
+        _loadSchools(),
+        _loadClassRows(),
+        _loadTeachers(),
+      ]);
+      schools = results[0] as List<SchoolModel>;
+      classRows = results[1] as List<Map<String, dynamic>>;
+      teachers = results[2] as List<TeacherModel>;
+    }
+    final classIds = classRows
+        .map((row) => row['id']?.toString() ?? '')
+        .where((value) => value.isNotEmpty)
+        .toList(growable: false);
+
+    final relatedResults = await Future.wait<dynamic>([
+      _loadStudents(classIds: classIds),
+      _loadSubjects(classIds: classIds),
+      _loadAssignments(classIds: classIds),
+      _loadTeacherAssignments(classIds: classIds),
+    ]);
+
+    final students = relatedResults[0] as List<StudentModel>;
+    final subjects = relatedResults[1] as List<SubjectModel>;
+    final assignments = relatedResults[2] as List<AssignmentModel>;
+    final teacherAssignments =
+        relatedResults[3] as List<ClassTeacherSubjectModel>;
     final assignmentIds = assignments
         .map((assignment) => assignment.id)
         .whereType<String>()
-        .toList();
-    final scores = await _loadScores(db, assignmentIds: assignmentIds);
-    final students = await _loadStudents(db, classIds: classIds);
-    final teacherAssignments = await _loadTeacherAssignments(
-      db,
-      classIds: classIds,
-    );
+        .toList(growable: false);
+    final scores = await _loadScores(assignmentIds: assignmentIds);
+    final classes = _mapClassesWithStudentStats(classRows, students);
 
     return _LocalDashboardSnapshot(
       schools: schools,
@@ -812,17 +902,56 @@ class DashboardRepository {
     );
   }
 
-  Future<List<SchoolModel>> _loadSchools(
-    Database db, {
+  Future<_LocalSnapshotLoadResult> _loadLocalSnapshotSafely({
     String? schoolId,
+    String? organizationId,
   }) async {
-    final rows = schoolId == null || schoolId.isEmpty
-        ? await db.query(DatabaseHelper.tableSchools)
-        : await db.query(
-            DatabaseHelper.tableSchools,
-            where: 'id = ?',
-            whereArgs: [schoolId],
-          );
+    final timeout = kIsWeb ? _webLocalSnapshotTimeout : _localSnapshotTimeout;
+
+    try {
+      final snapshot = await _loadLocalSnapshot(
+        schoolId: schoolId,
+        organizationId: organizationId,
+      ).timeout(timeout);
+      return _LocalSnapshotLoadResult(snapshot: snapshot);
+    } on TimeoutException {
+      return _LocalSnapshotLoadResult(
+        snapshot: _LocalDashboardSnapshot.empty,
+        errorMessage: kIsWeb
+            ? 'Firestore operational data took too long to respond on web, so Trellis continued without live school, class, and roster metrics.'
+            : 'Firestore operational data took too long to load, so Trellis continued without live school, class, and roster metrics.',
+      );
+    } catch (error) {
+      return _LocalSnapshotLoadResult(
+        snapshot: _LocalDashboardSnapshot.empty,
+        errorMessage: kIsWeb
+            ? 'Firestore operational data is unavailable on web right now: $error'
+            : 'Firestore operational data is unavailable right now: $error',
+      );
+    }
+  }
+
+  Future<List<SchoolModel>> _loadSchools({
+    String? schoolId,
+    String? organizationId,
+  }) async {
+    late final List<Map<String, dynamic>> rows;
+    if (schoolId != null && schoolId.isNotEmpty) {
+      rows = await _operationalStore.queryByIds(
+        collectionName: OperationalFirestoreService.schoolsCollection,
+        ids: [schoolId],
+      );
+    } else if (organizationId != null && organizationId.isNotEmpty) {
+      rows = await _operationalStore.queryByField(
+        collectionName: OperationalFirestoreService.schoolsCollection,
+        field: 'organization_id',
+        isEqualTo: organizationId,
+      );
+    } else {
+      rows = await _operationalStore.getAllDocuments(
+        collectionName: OperationalFirestoreService.schoolsCollection,
+      );
+    }
 
     final schools = rows
         .map((row) => SchoolModel.fromDto(row, row['id'].toString()))
@@ -831,43 +960,51 @@ class DashboardRepository {
     return schools;
   }
 
-  Future<List<ClassModel>> _loadClasses(Database db, {String? schoolId}) async {
-    final args = <Object?>[];
-    final buffer = StringBuffer('''
-      SELECT
-        c.*,
-        COUNT(s.id) AS total_students,
-        SUM(CASE WHEN s.sex = 'F' THEN 1 ELSE 0 END) AS female_students
-      FROM ${DatabaseHelper.tableClasses} c
-      LEFT JOIN ${DatabaseHelper.tableStudents} s
-        ON s.class_id = c.id
-    ''');
-
+  Future<List<Map<String, dynamic>>> _loadClassRows({
+    String? schoolId,
+    List<String>? schoolIds,
+  }) async {
     if (schoolId != null && schoolId.isNotEmpty) {
-      buffer.write(' WHERE c.school_id = ?');
-      args.add(schoolId);
+      return _operationalStore.queryByField(
+        collectionName: OperationalFirestoreService.classesCollection,
+        field: 'school_id',
+        isEqualTo: schoolId,
+      );
     }
-
-    buffer.write(' GROUP BY c.id');
-    final rows = await db.rawQuery(buffer.toString(), args);
-    final classes = rows
-        .map((row) => ClassModel.fromDto(row, row['id'].toString()))
-        .toList();
-    KhmerCollator.sortBy(classes, (classModel) => classModel.name);
-    return classes;
+    if (schoolIds != null) {
+      return _operationalStore.queryByFieldIn(
+        collectionName: OperationalFirestoreService.classesCollection,
+        field: 'school_id',
+        values: schoolIds,
+      );
+    }
+    return _operationalStore.getAllDocuments(
+      collectionName: OperationalFirestoreService.classesCollection,
+    );
   }
 
-  Future<List<TeacherModel>> _loadTeachers(
-    Database db, {
+  Future<List<TeacherModel>> _loadTeachers({
     String? schoolId,
+    List<String>? schoolIds,
   }) async {
-    final rows = schoolId == null || schoolId.isEmpty
-        ? await db.query(DatabaseHelper.tableTeachers)
-        : await db.query(
-            DatabaseHelper.tableTeachers,
-            where: 'school_id = ?',
-            whereArgs: [schoolId],
-          );
+    late final List<Map<String, dynamic>> rows;
+    if (schoolId != null && schoolId.isNotEmpty) {
+      rows = await _operationalStore.queryByField(
+        collectionName: OperationalFirestoreService.teachersCollection,
+        field: 'school_id',
+        isEqualTo: schoolId,
+      );
+    } else if (schoolIds != null) {
+      rows = await _operationalStore.queryByFieldIn(
+        collectionName: OperationalFirestoreService.teachersCollection,
+        field: 'school_id',
+        values: schoolIds,
+      );
+    } else {
+      rows = await _operationalStore.getAllDocuments(
+        collectionName: OperationalFirestoreService.teachersCollection,
+      );
+    }
 
     final teachers = rows
         .map((row) => TeacherModel.fromDto(row, row['id'].toString()))
@@ -876,76 +1013,82 @@ class DashboardRepository {
     return teachers;
   }
 
-  Future<List<StudentModel>> _loadStudents(
-    Database db, {
+  Future<List<StudentModel>> _loadStudents({
     required List<String> classIds,
   }) async {
-    final rows = await _queryRowsByIds(
-      db,
-      table: DatabaseHelper.tableStudents,
-      column: 'class_id',
-      ids: classIds,
+    final rows = await _operationalStore.queryByFieldIn(
+      collectionName: OperationalFirestoreService.studentsCollection,
+      field: 'class_id',
+      values: classIds,
     );
     return rows
         .map((row) => StudentModel.fromDto(row, row['id'].toString()))
         .toList();
   }
 
-  Future<List<SubjectModel>> _loadSubjects(
-    Database db, {
+  Future<List<SubjectModel>> _loadSubjects({
     required List<String> classIds,
   }) async {
-    final rows = await _queryRowsByIds(
-      db,
-      table: DatabaseHelper.tableSubjects,
-      column: 'class_id',
-      ids: classIds,
-      orderBy: 'display_order ASC, id ASC',
+    final rows = await _operationalStore.queryByFieldIn(
+      collectionName: OperationalFirestoreService.subjectsCollection,
+      field: 'class_id',
+      values: classIds,
     );
-    return rows
+    final subjects = rows
         .map((row) => SubjectModel.fromDto(row, row['id'].toString()))
-        .toList();
+        .toList(growable: false);
+    subjects.sort((a, b) {
+      final orderCompare = (a.displayOrder ?? 0).compareTo(b.displayOrder ?? 0);
+      if (orderCompare != 0) {
+        return orderCompare;
+      }
+      return (a.id ?? '').compareTo(b.id ?? '');
+    });
+    return subjects;
   }
 
-  Future<List<AssignmentModel>> _loadAssignments(
-    Database db, {
+  Future<List<AssignmentModel>> _loadAssignments({
     required List<String> classIds,
   }) async {
-    final rows = await _queryRowsByIds(
-      db,
-      table: DatabaseHelper.tableAssignments,
-      column: 'class_id',
-      ids: classIds,
+    final rows = await _operationalStore.queryByFieldIn(
+      collectionName: OperationalFirestoreService.assignmentsCollection,
+      field: 'class_id',
+      values: classIds,
     );
-    return rows
+    final assignments = rows
         .map((row) => AssignmentModel.fromDto(row, row['id'].toString()))
-        .toList();
+        .toList(growable: false);
+    assignments.sort((a, b) {
+      final yearCompare = b.year.compareTo(a.year);
+      if (yearCompare != 0) {
+        return yearCompare;
+      }
+      return b.month.compareTo(a.month);
+    });
+    return assignments;
   }
 
-  Future<List<ScoreModel>> _loadScores(
-    Database db, {
+  Future<List<ScoreModel>> _loadScores({
     required List<String> assignmentIds,
   }) async {
-    final rows = await _queryRowsByIds(
-      db,
-      table: DatabaseHelper.tableScores,
-      column: 'assignment_id',
-      ids: assignmentIds,
+    final rows = await _operationalStore.queryByFieldIn(
+      collectionName: OperationalFirestoreService.scoresCollection,
+      field: 'assignment_id',
+      values: assignmentIds,
     );
     return rows
         .map((row) => ScoreModel.fromDto(row, row['id'].toString()))
         .toList();
   }
 
-  Future<List<ClassTeacherSubjectModel>> _loadTeacherAssignments(
-    Database db, {
+  Future<List<ClassTeacherSubjectModel>> _loadTeacherAssignments({
     required List<String> classIds,
   }) async {
-    final rows = await _queryRowsByIds(
-      db,
-      table: DatabaseHelper.tableClassTeacherSubject,
-      column: 'class_id',
-      ids: classIds,
+    final rows = await _operationalStore.queryByFieldIn(
+      collectionName:
+          OperationalFirestoreService.classTeacherSubjectsCollection,
+      field: 'class_id',
+      values: classIds,
     );
     return rows
         .map(
@@ -954,24 +1097,33 @@ class DashboardRepository {
         .toList();
   }
 
-  Future<List<Map<String, Object?>>> _queryRowsByIds(
-    Database db, {
-    required String table,
-    required String column,
-    required List<String> ids,
-    String? orderBy,
-  }) async {
-    if (ids.isEmpty) {
-      return const [];
+  List<ClassModel> _mapClassesWithStudentStats(
+    List<Map<String, dynamic>> rows,
+    List<StudentModel> students,
+  ) {
+    final totalByClassId = <String, int>{};
+    final femaleByClassId = <String, int>{};
+    for (final student in students) {
+      totalByClassId[student.classId] =
+          (totalByClassId[student.classId] ?? 0) + 1;
+      if ((student.sex ?? '').trim().toUpperCase() == 'F') {
+        femaleByClassId[student.classId] =
+            (femaleByClassId[student.classId] ?? 0) + 1;
+      }
     }
 
-    final placeholders = List.filled(ids.length, '?').join(', ');
-    return db.query(
-      table,
-      where: '$column IN ($placeholders)',
-      whereArgs: ids,
-      orderBy: orderBy,
-    );
+    final classes = rows
+        .map((row) {
+          final classId = row['id'].toString();
+          return ClassModel.fromDto({
+            ...row,
+            'total_students': totalByClassId[classId] ?? 0,
+            'female_students': femaleByClassId[classId] ?? 0,
+          }, classId);
+        })
+        .toList(growable: false);
+    KhmerCollator.sortBy(classes, (classModel) => classModel.name);
+    return classes;
   }
 
   List<_ClassInsight> _buildClassInsights({
@@ -1139,6 +1291,17 @@ class _LocalDashboardSnapshot {
     required this.teacherAssignments,
   });
 
+  static const empty = _LocalDashboardSnapshot(
+    schools: [],
+    classes: [],
+    teachers: [],
+    students: [],
+    subjects: [],
+    assignments: [],
+    scores: [],
+    teacherAssignments: [],
+  );
+
   final List<SchoolModel> schools;
   final List<ClassModel> classes;
   final List<TeacherModel> teachers;
@@ -1147,6 +1310,13 @@ class _LocalDashboardSnapshot {
   final List<AssignmentModel> assignments;
   final List<ScoreModel> scores;
   final List<ClassTeacherSubjectModel> teacherAssignments;
+}
+
+class _LocalSnapshotLoadResult {
+  const _LocalSnapshotLoadResult({required this.snapshot, this.errorMessage});
+
+  final _LocalDashboardSnapshot snapshot;
+  final String? errorMessage;
 }
 
 class _ClassInsight {
